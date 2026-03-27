@@ -1,0 +1,3753 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MEGAHERTZ — レジ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1814;
+    --surface2: #252219;
+    --border: #2e2a22;
+    --amber: #e8a030;
+    --amber-dim: #a06c1a;
+    --cream: #f0e8d8;
+    --cream-dim: #8a7f6e;
+    --red: #c84030;
+    --green: #507840;
+    --text: #e8e0d0;
+    --text-dim: #6a6058;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--amber);
+    font-weight: 700;
+  }
+
+  .date-display {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+  }
+
+  .nav-tab {
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .nav-tab.active {
+    background: var(--amber);
+    color: var(--bg);
+  }
+
+  .nav-tab:not(.active) {
+    background: transparent;
+    color: var(--text-dim);
+  }
+
+  .nav-tab:not(.active):active {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ===== REGISTER VIEW ===== */
+  #view-register {
+    display: flex;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* LEFT: MENU */
+  .menu-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+  }
+
+  .category-bar {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px;
+    overflow-x: auto;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+  }
+
+  .category-bar::-webkit-scrollbar { display: none; }
+
+  .cat-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .cat-btn.active {
+    background: var(--amber);
+    border-color: var(--amber);
+    color: var(--bg);
+  }
+
+  .item-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px;
+    overflow-y: auto;
+    flex: 1;
+    align-content: start;
+  }
+
+  .item-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 10px 44px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.1s;
+    touch-action: manipulation;
+  }
+
+  .item-btn:active {
+    background: var(--surface2);
+    border-color: var(--amber-dim);
+    transform: scale(0.97);
+  }
+
+  .item-name {
+    font-size: 18px;
+    font-weight: 500;
+    text-align: center;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .item-price {
+    font-family: 'Space Mono', monospace;
+    font-size: 15px;
+    color: var(--amber);
+  }
+
+  /* RIGHT: CART */
+  .cart-panel {
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .cart-header {
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .cart-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .cart-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    background: var(--bg);
+  }
+
+  .cart-item-name {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .cart-qty-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .qty-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  .qty-btn:active { background: var(--surface2); }
+
+  .qty-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  .cart-item-subtotal {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--amber);
+    min-width: 52px;
+    text-align: right;
+  }
+
+  .cart-footer {
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .total-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.1em;
+  }
+
+  .total-amount {
+    font-family: 'Space Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--cream);
+  }
+
+  .charge-btn {
+    background: var(--amber);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Noto Sans JP', sans-serif;
+    letter-spacing: 0.05em;
+  }
+
+  .charge-btn:active { filter: brightness(0.9); transform: scale(0.99); }
+  .charge-btn:disabled { background: var(--border); color: var(--text-dim); }
+
+  .clear-btn {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .clear-btn:active { background: var(--surface2); }
+
+  /* ===== SALES VIEW ===== */
+  #view-sales {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  #view-sales.active { display: flex; }
+
+  .sales-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nav-arrow {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-arrow:active { background: var(--surface2); }
+
+  .month-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    color: var(--text);
+    min-width: 100px;
+    text-align: center;
+  }
+
+  .add-sale-btn {
+    margin-left: auto;
+    padding: 8px 16px;
+    background: var(--amber);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .sales-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+  }
+
+  /* Monthly summary */
+  .month-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+
+  .summary-card-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+
+  .summary-card-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--amber);
+  }
+
+  .summary-card-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+
+  /* Daily list */
+  .daily-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .day-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+
+  .day-row.today { border-color: var(--amber-dim); }
+
+  .day-date {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    min-width: 90px;
+    color: var(--text-dim);
+  }
+
+  .day-amount {
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--cream);
+    flex: 1;
+  }
+
+  .day-memo {
+    font-size: 12px;
+    color: var(--text-dim);
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .day-edit-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .day-edit-btn:active { background: var(--surface2); }
+
+  /* ===== SETTINGS VIEW ===== */
+  #view-settings {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  #view-settings.active { display: flex; }
+
+  .settings-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    max-width: 600px;
+    width: 100%;
+  }
+
+  .settings-section {
+    margin-bottom: 28px;
+  }
+
+  .settings-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--amber);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .item-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+  }
+
+  .item-row-name { flex: 1; font-size: 14px; }
+  .item-row-cat { font-size: 12px; color: var(--text-dim); }
+  .item-row-price {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--amber);
+    min-width: 60px;
+    text-align: right;
+  }
+
+  .del-btn {
+    padding: 4px 8px;
+    border: 1px solid var(--red);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--red);
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  /* Forms */
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 120px 120px auto;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+
+  input, select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    width: 100%;
+  }
+
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--amber-dim);
+  }
+
+  .add-btn {
+    padding: 8px 16px;
+    background: var(--amber);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .modal-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--amber);
+    margin-bottom: 16px;
+    letter-spacing: 0.1em;
+  }
+
+  .modal-total {
+    font-family: 'Space Mono', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--cream);
+    margin: 16px 0;
+  }
+
+  .modal-items {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    max-height: 120px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+  }
+
+  .modal-item-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .modal-confirm {
+    flex: 1;
+    padding: 14px;
+    background: var(--amber);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .modal-cancel {
+    padding: 14px 20px;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  /* Variant modal */
+  .variant-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 4px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .variant-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.1s;
+    touch-action: manipulation;
+  }
+
+  .variant-btn:active {
+    background: var(--surface2);
+    border-color: var(--amber);
+    transform: scale(0.97);
+  }
+
+  .variant-btn-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .variant-btn-price {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--amber);
+  }
+
+  /* item-btn with variants indicator */
+  .item-btn.has-variants::after {
+    content: '▾';
+    font-size: 48px;
+    line-height: 1;
+    color: var(--amber-dim);
+    position: absolute;
+    bottom: 2px;
+    right: 6px;
+  }
+
+  .item-btn { position: relative; }
+
+  /* Sale entry modal */
+  .sale-modal-body { display: flex; flex-direction: column; gap: 10px; }
+  .sale-modal-label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--green);
+    color: #fff;
+    padding: 10px 22px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: transform 0.3s;
+    z-index: 200;
+    pointer-events: none;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 30px 20px;
+  }
+
+  .no-sales-row {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 8px;
+  }
+
+  /* ===== SORT ===== */
+  .settings-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .settings-title-row .settings-title { margin-bottom: 0; }
+
+  .sort-cat-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .sort-cat-btn {
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    white-space: nowrap;
+  }
+  .sort-cat-btn.active {
+    background: var(--amber);
+    color: var(--bg);
+    border-color: var(--amber);
+  }
+
+  .sort-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  .sort-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 40px;
+  }
+
+  .sort-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    transition: background 0.1s, opacity 0.15s;
+  }
+  .sort-row:active { cursor: grabbing; }
+  .sort-row.dragging {
+    opacity: 0.4;
+  }
+  .sort-row.drag-over {
+    border-color: var(--amber);
+    background: var(--surface2);
+  }
+
+  .sort-handle {
+    color: var(--text-dim);
+    font-size: 16px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .sort-row-name {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .sort-row-price {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--amber);
+    flex-shrink: 0;
+  }
+  .sort-row-var {
+    font-size: 11px;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+
+
+  /* ===== REGISTER EDIT MODE ===== */
+  .register-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px 0 0;
+    flex-shrink: 0;
+  }
+  .register-toolbar .category-bar {
+    flex: 1;
+    padding: 10px 12px;
+  }
+  .edit-sort-btn {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.15s;
+  }
+  .edit-sort-btn.active {
+    background: var(--amber);
+    color: var(--bg);
+    border-color: var(--amber);
+    font-weight: 700;
+  }
+
+  /* item-btn in edit mode */
+  .item-grid.edit-mode .item-btn {
+    cursor: grab;
+    border-color: var(--amber-dim, #a0622a);
+    opacity: 0.9;
+  }
+  .item-grid.edit-mode .item-btn:active { cursor: grabbing; }
+  .item-grid.edit-mode .item-btn.dragging { opacity: 0.35; }
+  .item-grid.edit-mode .item-btn.drag-over {
+    border-color: var(--amber);
+    background: var(--surface2);
+    transform: scale(1.03);
+  }
+  .item-grid.edit-mode-hint {
+    font-size: 11px;
+    color: var(--amber);
+    text-align: center;
+    padding: 4px 0 8px;
+    display: none;
+  }
+  .item-grid.edit-mode ~ .edit-mode-hint { display: block; }
+
+
+  /* ===== TICKET BAR ===== */
+  .ticket-bar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px 6px;
+    border-bottom: 1px solid var(--border);
+    min-height: 44px;
+    flex-shrink: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ticket-bar::-webkit-scrollbar { display: none; }
+
+  .ticket-tabs {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ticket-tabs::-webkit-scrollbar { display: none; }
+
+  .ticket-tab {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'Noto Sans JP', sans-serif;
+    flex-shrink: 0;
+    transition: all 0.1s;
+  }
+  .ticket-tab.active {
+    background: var(--surface2);
+    border-color: var(--amber);
+    color: var(--amber);
+    font-weight: 700;
+  }
+  .ticket-tab-total {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    opacity: 0.7;
+  }
+  .ticket-tab.active .ticket-tab-total { color: var(--amber); opacity: 0.7; }
+  .ticket-tab-close {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1;
+    padding: 0 2px;
+    opacity: 0.5;
+  }
+  .ticket-tab-close:hover { opacity: 1; color: #e05050; }
+
+  .ticket-new-btn {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--amber);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .ticket-new-btn:active { background: var(--surface2); }
+
+
+  /* ===== CUSTOMER VIEW ===== */
+  #view-customers { display: none; flex: 1; overflow: hidden; }
+  #view-customers.active { display: flex; }
+
+  .cust-layout {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .cust-list-panel {
+    width: 300px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .cust-toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .cust-toolbar input {
+    flex: 1;
+    padding: 8px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .cust-list {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .cust-row {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .cust-row:active, .cust-row.active { background: var(--surface2); }
+  .cust-row-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .cust-row-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .cust-row-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--amber);
+  }
+
+  .cust-detail-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .cust-detail-empty {
+    color: var(--text-dim);
+    font-size: 13px;
+    text-align: center;
+    margin-top: 60px;
+  }
+  .cust-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .cust-detail-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--cream);
+  }
+  .cust-detail-kana {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .cust-detail-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .cust-edit-btn {
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .cust-del-btn {
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid #c0392b44;
+    border-radius: 6px;
+    color: #e05050;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .cust-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .cust-stat-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .cust-stat-label { font-size: 10px; color: var(--text-dim); margin-bottom: 4px; }
+  .cust-stat-value { font-family: 'Space Mono', monospace; font-size: 16px; color: var(--amber); }
+
+  .cust-info-row {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .cust-info-row span { color: var(--text); }
+
+  .cust-history-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 20px 0 10px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+
+  .cust-visit {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .cust-visit-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .cust-visit-date { font-size: 12px; color: var(--text-dim); }
+  .cust-visit-total { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--amber); }
+  .cust-visit-items { font-size: 12px; color: var(--text); line-height: 1.6; }
+
+  /* Charge modal customer search */
+  .charge-customer-row {
+    margin: 12px 0 8px;
+    position: relative;
+  }
+  .charge-cust-search-wrap { position: relative; }
+  .charge-cust-search-wrap input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    margin-top: 4px;
+  }
+  .charge-cust-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0; right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    z-index: 50;
+    max-height: 160px;
+    overflow-y: auto;
+    display: none;
+  }
+  .charge-cust-dropdown.open { display: block; }
+  .charge-cust-opt {
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+  .charge-cust-opt:last-child { border-bottom: none; }
+  .charge-cust-opt:active { background: var(--surface2); }
+  .charge-cust-opt-sub { font-size: 11px; color: var(--text-dim); }
+  .charge-cust-selected {
+    font-size: 12px;
+    color: var(--amber);
+    margin-top: 4px;
+    min-height: 16px;
+  }
+
+  @media (max-width: 768px) {
+    .cust-list-panel { width: 100%; border-right: none; }
+    .cust-detail-panel { display: none; }
+    .cust-list-panel.detail-open { display: none; }
+    .cust-detail-panel.detail-open { display: block; width: 100%; }
+  }
+
+
+  /* Payment method buttons */
+  .payment-btns {
+    display: flex;
+    gap: 8px;
+  }
+  .pay-btn {
+    flex: 1;
+    padding: 12px 6px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    color: var(--text-dim);
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 600;
+  }
+  .pay-btn.active {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: var(--surface2);
+  }
+
+  /* Payment breakdown in day row */
+  .day-breakdown {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+  .day-breakdown-chip {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .day-breakdown-chip.cash  { border-color: #6ab04c55; color: #6ab04c; }
+  .day-breakdown-chip.card  { border-color: #4a90d955; color: #4a90d9; }
+  .day-breakdown-chip.qr    { border-color: #f0932b55; color: #f0932b; }
+
+  /* Today's summary bar in sales view */
+  .today-summary {
+    background: var(--surface);
+    border: 1px solid var(--amber);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .today-summary-title {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .today-summary-total {
+    font-family: 'Space Mono', monospace;
+    font-size: 24px;
+    color: var(--amber);
+    margin-bottom: 10px;
+  }
+  .today-summary-breakdown {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .today-bd-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    min-width: 80px;
+  }
+  .today-bd-label { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
+  .today-bd-value { font-family: 'Space Mono', monospace; font-size: 14px; color: var(--cream); }
+  .today-bd-item.cash .today-bd-value  { color: #6ab04c; }
+  .today-bd-item.card .today-bd-value  { color: #4a90d9; }
+  .today-bd-item.qr   .today-bd-value  { color: #f0932b; }
+
+
+  /* ===== ANALYTICS ===== */
+  #view-analytics { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+  #view-analytics.active { display: flex; }
+
+  .analytics-lock {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lock-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 28px;
+    width: 260px;
+    text-align: center;
+  }
+  .lock-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    color: var(--amber);
+    letter-spacing: 0.15em;
+    margin-bottom: 20px;
+  }
+  .pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .pin-dots span {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    transition: background 0.15s;
+  }
+  .pin-dots span.filled { background: var(--amber); border-color: var(--amber); }
+  .pin-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .pin-key {
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 18px;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .pin-key:active { background: var(--surface2); }
+  .pin-clear { color: var(--text-dim); font-size: 14px; }
+  .pin-del   { color: var(--text-dim); }
+  .pin-error {
+    margin-top: 14px;
+    font-size: 12px;
+    color: #e05050;
+    min-height: 16px;
+  }
+  .pin-shake { animation: shake 0.3s ease; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  .analytics-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .analytics-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .analytics-period-tabs { display: flex; gap: 6px; }
+  .aperiod-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.1s;
+  }
+  .aperiod-btn.active { background: var(--amber); color: var(--bg); border-color: var(--amber); font-weight: 700; }
+  .analytics-lock-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .analytics-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .analytics-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  /* DJ ranking */
+  .dj-rank-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 6px;
+  }
+  .dj-rank-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .dj-rank-num.gold   { color: #f9ca24; }
+  .dj-rank-num.silver { color: #b2bec3; }
+  .dj-rank-num.bronze { color: #cd6133; }
+  .dj-rank-name { flex: 1; font-size: 14px; color: var(--text); font-weight: 600; }
+  .dj-rank-stats { text-align: right; }
+  .dj-rank-sales { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--amber); }
+  .dj-rank-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  /* Heatmap */
+  .heatmap-wrap { overflow-x: auto; }
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: 36px repeat(7, 1fr);
+    gap: 3px;
+    min-width: 340px;
+  }
+  .heatmap-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: center;
+    padding: 3px 0;
+    font-family: 'Space Mono', monospace;
+  }
+  .heatmap-cell {
+    height: 28px;
+    border-radius: 4px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    position: relative;
+    cursor: default;
+  }
+  .heatmap-cell[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 10px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Item ranking */
+  .item-rank-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .item-rank-bar-wrap { flex: 1; background: var(--bg); border-radius: 4px; height: 18px; overflow: hidden; }
+  .item-rank-bar { height: 100%; background: var(--amber); border-radius: 4px; opacity: 0.7; transition: width 0.3s; }
+  .item-rank-name { width: 130px; font-size: 12px; color: var(--text); flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item-rank-count { width: 70px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); text-align: right; flex-shrink: 0; }
+
+  /* Weekday chart */
+  .weekday-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 80px;
+  }
+  .wday-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .wday-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+  .wday-bar { width: 100%; background: var(--amber); border-radius: 4px 4px 0 0; opacity: 0.75; min-height: 2px; transition: height 0.3s; }
+  .wday-label { font-size: 10px; color: var(--text-dim); font-family: 'Space Mono', monospace; }
+  .wday-value { font-size: 9px; color: var(--text-dim); }
+
+
+  .cust-dedup-btn {
+    flex-shrink: 0;
+    padding: 8px 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    white-space: nowrap;
+  }
+  .cust-dedup-btn:active { background: var(--surface2); }
+
+  .edit-btn {
+    padding: 4px 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    flex-shrink: 0;
+  }
+  .edit-btn:active { background: var(--surface2); }
+
+  .dedup-pair {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .dedup-pair-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .dedup-score {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    font-family: 'Space Mono', monospace;
+  }
+  .dedup-cards {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .dedup-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 12px;
+  }
+  .dedup-card-name { font-size: 14px; font-weight: 700; color: var(--cream); margin-bottom: 4px; }
+  .dedup-card-sub  { color: var(--text-dim); font-size: 11px; line-height: 1.6; }
+  .dedup-arrow { text-align: center; color: var(--text-dim); font-size: 18px; }
+  .dedup-merge-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px;
+    background: transparent;
+    border: 1px solid var(--amber);
+    border-radius: 8px;
+    color: var(--amber);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .dedup-merge-btn:active { background: var(--surface2); }
+
+  .merge-opt {
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .merge-opt.selected { border-color: var(--amber); background: var(--surface2); }
+  .merge-opt-name { font-size: 15px; font-weight: 700; color: var(--cream); }
+  .merge-opt-sub  { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MHZ</div>
+  <div class="date-display" id="header-date"></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showView('register')">レジ</button>
+    <button class="nav-tab" onclick="showView('sales')">売上</button>
+    <button class="nav-tab" onclick="showView('settings')">設定</button>
+    <button class="nav-tab" onclick="showView('customers')">顧客</button>
+    <button class="nav-tab" onclick="showView('analytics')">分析</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ===== REGISTER ===== -->
+  <div id="view-register" class="active" style="display:flex">
+    <div class="menu-panel">
+      <div class="register-toolbar">
+        <div class="category-bar" id="category-bar"></div>
+        <button class="edit-sort-btn" id="edit-sort-btn" onclick="toggleEditMode()">並び替え</button>
+      </div>
+      <div class="item-grid" id="item-grid"></div>
+    </div>
+    <div class="cart-panel">
+      <div class="ticket-bar">
+        <div class="ticket-tabs" id="ticket-tabs"></div>
+        <button class="ticket-new-btn" onclick="openNewTicketModal()" title="新規伝票">＋</button>
+      </div>
+      <div class="cart-header" id="cart-header-label">ORDER</div>
+      <div class="cart-items" id="cart-items">
+        <div class="empty-state" id="cart-empty">商品を選択してください</div>
+      </div>
+      <div class="cart-footer">
+        <div class="total-row">
+          <div class="total-label">TOTAL</div>
+          <div class="total-amount" id="total-display">¥0</div>
+        </div>
+        <button class="charge-btn" id="charge-btn" onclick="openChargeModal()" disabled>会計する</button>
+        <button class="clear-btn" onclick="clearCart()">クリア</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SALES ===== -->
+  <div id="view-sales">
+    <div class="sales-toolbar">
+      <div class="month-nav">
+        <button class="nav-arrow" onclick="changeMonth(-1)">‹</button>
+        <div class="month-label" id="month-label"></div>
+        <button class="nav-arrow" onclick="changeMonth(1)">›</button>
+      </div>
+      <button class="add-sale-btn" onclick="openAddSaleModal()">＋ 売上を入力</button>
+    </div>
+    <div class="sales-content">
+      <div class="month-summary" id="month-summary"></div>
+      <div class="daily-list" id="daily-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== SETTINGS ===== -->
+  <div id="view-settings">
+    <div class="settings-content">
+      <div class="settings-section">
+        <div class="settings-title">DJ / イベント登録</div>
+        <div class="form-row">
+          <input type="text" id="new-dj-name" placeholder="DJ名またはイベントタイトル" style="flex:3">
+          <button class="add-btn" onclick="addDJ()">追加</button>
+        </div>
+        <div class="item-list" id="dj-list" style="margin-top:8px"></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">バックアップ / 復元</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="add-btn" style="flex:1;min-width:120px" onclick="exportBackup()">📥 エクスポート</button>
+          <label class="add-btn" style="flex:1;min-width:120px;text-align:center;cursor:pointer">
+            📤 インポート
+            <input type="file" accept=".json" style="display:none" onchange="importBackup(event)">
+          </label>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:8px;line-height:1.6">
+          エクスポート：全データをJSONファイルに書き出してiCloudなどに保存できます。<br>
+          インポート：バックアップファイルから復元します（現在のデータは上書きされます）。
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">商品を追加</div>
+        <div class="form-row">
+          <input type="text" id="new-name" placeholder="商品名">
+          <input type="text" id="new-cat" placeholder="カテゴリ">
+          <input type="number" id="new-price" placeholder="価格" min="0">
+          <button class="add-btn" onclick="addItem()">追加</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title-row">
+          <div class="settings-title">並び替え</div>
+          <div class="sort-cat-tabs" id="sort-cat-tabs"></div>
+        </div>
+        <div class="sort-hint">長押し or ドラッグで並び替え</div>
+        <div class="sort-list" id="sort-list"></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">商品リスト</div>
+        <div class="item-list" id="item-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CUSTOMERS ===== -->
+  <div id="view-customers">
+    <div class="cust-layout">
+      <div class="cust-list-panel">
+        <div class="cust-toolbar">
+          <input type="text" id="cust-search" placeholder="名前・よみがなで検索…" oninput="renderCustomerList()">
+          <button class="cust-dedup-btn" onclick="openDedupModal()">🔍 重複チェック</button>
+          <button class="add-sale-btn" onclick="openNewCustomerModal()">＋ 新規登録</button>
+        </div>
+        <div class="cust-list" id="cust-list"></div>
+      </div>
+      <div class="cust-detail-panel" id="cust-detail-panel">
+        <div class="cust-detail-empty">顧客を選択してください</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ANALYTICS ===== -->
+  <div id="view-analytics">
+    <div id="analytics-lock" class="analytics-lock">
+      <div class="lock-box">
+        <div class="lock-title">🔒 OWNER</div>
+        <div class="pin-dots" id="pin-dots">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="pin-pad">
+          <button class="pin-key" onclick="pinInput(1)">1</button>
+          <button class="pin-key" onclick="pinInput(2)">2</button>
+          <button class="pin-key" onclick="pinInput(3)">3</button>
+          <button class="pin-key" onclick="pinInput(4)">4</button>
+          <button class="pin-key" onclick="pinInput(5)">5</button>
+          <button class="pin-key" onclick="pinInput(6)">6</button>
+          <button class="pin-key" onclick="pinInput(7)">7</button>
+          <button class="pin-key" onclick="pinInput(8)">8</button>
+          <button class="pin-key" onclick="pinInput(9)">9</button>
+          <button class="pin-key pin-clear" onclick="pinClear()">C</button>
+          <button class="pin-key" onclick="pinInput(0)">0</button>
+          <button class="pin-key pin-del" onclick="pinDel()">⌫</button>
+        </div>
+        <div class="pin-error" id="pin-error"></div>
+      </div>
+    </div>
+    <div id="analytics-content" class="analytics-content" style="display:none">
+      <div class="analytics-toolbar">
+        <div class="analytics-period-tabs" id="analytics-period-tabs">
+          <button class="aperiod-btn active" onclick="selectAnalyticsPeriod('month')">今月</button>
+          <button class="aperiod-btn" onclick="selectAnalyticsPeriod('3month')">3ヶ月</button>
+          <button class="aperiod-btn" onclick="selectAnalyticsPeriod('all')">全期間</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="analytics-lock-btn" onclick="showChangePinPanel()">🔑 PIN変更</button>
+          <button class="analytics-lock-btn" onclick="lockAnalytics()">🔒 ロック</button>
+        </div>
+      </div>
+      <div id="change-pin-panel" style="display:none;background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px">
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px">PINコード変更</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="password" id="current-pin-input" placeholder="現在のPIN" maxlength="4" inputmode="numeric"
+            style="width:120px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--cream);font-family:'Space Mono',monospace;font-size:14px">
+          <input type="password" id="new-pin-input" placeholder="新しいPIN（4桁）" maxlength="4" inputmode="numeric"
+            style="width:160px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--cream);font-family:'Space Mono',monospace;font-size:14px">
+          <button class="add-btn" onclick="changePinFromAnalytics()">変更</button>
+          <button class="modal-cancel" style="padding:8px 12px" onclick="hideChangePinPanel()">キャンセル</button>
+        </div>
+      </div>
+      <div class="analytics-body" id="analytics-body"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CHARGE MODAL -->
+<div class="modal-overlay" id="charge-modal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">CHECKOUT</div>
+    <div class="modal-items" id="modal-items"></div>
+    <div class="modal-total" id="modal-total"></div>
+    <div style="display:flex;gap:10px;margin:12px 0 0">
+      <div style="flex:1">
+        <div class="sale-modal-label">客数</div>
+        <input type="number" id="charge-guests" placeholder="0" min="1" max="99"
+          style="width:100%;box-sizing:border-box;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;font-family:'Space Mono',monospace;margin-top:4px">
+      </div>
+      <div style="flex:2;position:relative">
+        <div class="sale-modal-label">DJ / イベント</div>
+        <input type="text" id="charge-dj-input" placeholder="名前または検索…" autocomplete="off"
+          oninput="onChargeDjInput()"
+          style="width:100%;box-sizing:border-box;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Noto Sans JP',sans-serif;margin-top:4px">
+        <div class="charge-cust-dropdown" id="charge-dj-dropdown"></div>
+      </div>
+    </div>
+    <div class="charge-customer-row">
+      <div class="sale-modal-label">顧客（任意）</div>
+      <div class="charge-cust-search-wrap">
+        <input type="text" id="charge-cust-input" placeholder="名前で検索または入力…" oninput="onChargeCustInput()" autocomplete="off">
+        <div class="charge-cust-dropdown" id="charge-cust-dropdown"></div>
+      </div>
+      <div class="charge-cust-selected" id="charge-cust-selected"></div>
+    </div>
+    <div class="sale-modal-label" style="margin:14px 0 8px">支払い方法</div>
+    <div class="payment-btns">
+      <button class="pay-btn active" id="pay-cash" onclick="selectPayment('cash')">💴 現金</button>
+      <button class="pay-btn" id="pay-card" onclick="selectPayment('card')">💳 カード</button>
+      <button class="pay-btn" id="pay-qr" onclick="selectPayment('qr')">📱 QR</button>
+    </div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="modal-cancel" onclick="closeChargeModal()">戻る</button>
+      <button class="modal-confirm" onclick="confirmCharge()">受取確定</button>
+    </div>
+  </div>
+</div>
+
+<!-- SALE ENTRY MODAL -->
+<div class="modal-overlay" id="sale-modal">
+  <div class="modal">
+    <div class="modal-title">売上を入力</div>
+    <div class="sale-modal-body">
+      <div>
+        <div class="sale-modal-label">日付</div>
+        <input type="date" id="sale-date">
+      </div>
+      <div>
+        <div class="sale-modal-label">売上金額 (¥)</div>
+        <input type="number" id="sale-amount" placeholder="0" min="0">
+      </div>
+      <div>
+        <div class="sale-modal-label">メモ（任意）</div>
+        <input type="text" id="sale-memo" placeholder="イベント名など">
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="modal-cancel" onclick="closeSaleModal()">キャンセル</button>
+      <button class="modal-confirm" onclick="saveSaleEntry()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- VARIANT MODAL -->
+<div class="modal-overlay" id="variant-modal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title" id="variant-modal-title"></div>
+    <div class="variant-grid" id="variant-grid"></div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="modal-cancel" style="width:100%" onclick="closeVariantModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW TICKET MODAL -->
+<div class="modal-overlay" id="ticket-modal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title">新規伝票</div>
+    <div class="sale-modal-label" style="margin-bottom:6px">顧客を選択（任意）</div>
+    <div style="position:relative;margin-bottom:12px">
+      <input type="text" id="ticket-cust-input" placeholder="名前で検索…" autocomplete="off"
+        oninput="onTicketCustInput()"
+        style="width:100%;box-sizing:border-box;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Noto Sans JP',sans-serif;">
+      <div class="charge-cust-dropdown" id="ticket-cust-dropdown"></div>
+    </div>
+    <div class="charge-cust-selected" id="ticket-cust-selected" style="margin-bottom:12px"></div>
+    <div class="sale-modal-label" style="margin-bottom:6px">伝票名（顧客未選択時）</div>
+    <input type="text" id="ticket-name-input" placeholder="例：A席、まとめ" style="width:100%;box-sizing:border-box;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Noto Sans JP',sans-serif;margin-bottom:14px;">
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeNewTicketModal()">キャンセル</button>
+      <button class="modal-confirm" style="flex:1" onclick="createTicket()">作成</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMER NEW/EDIT MODAL -->
+<div class="modal-overlay" id="cust-modal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title" id="cust-modal-title">顧客を登録</div>
+    <div class="sale-modal-body">
+      <div>
+        <div class="sale-modal-label">名前 <span style="color:var(--amber)">*</span></div>
+        <input type="text" id="cust-name" placeholder="例：松石 太郎">
+      </div>
+      <div>
+        <div class="sale-modal-label">よみがな / ニックネーム</div>
+        <input type="text" id="cust-kana" placeholder="例：まついし、たろう">
+      </div>
+      <div>
+        <div class="sale-modal-label">電話番号</div>
+        <input type="tel" id="cust-phone" placeholder="例：090-1234-5678">
+      </div>
+      <div>
+        <div class="sale-modal-label">メモ・備考</div>
+        <input type="text" id="cust-memo" placeholder="例：ウイスキー好き">
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="modal-cancel" onclick="closeCustModal()">キャンセル</button>
+      <button class="modal-confirm" style="flex:1" onclick="saveCustomer()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM EDIT MODAL -->
+<div class="modal-overlay" id="item-edit-modal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title">商品を編集</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      <div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">商品名</div>
+        <input type="text" id="edit-item-name" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">カテゴリ</div>
+        <select id="edit-item-cat" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px">
+          <option>アルコール</option>
+          <option>限定アルコール</option>
+          <option>ノンアルコール</option>
+          <option>限定ノンアルコール</option>
+          <option>スイーツ</option>
+          <option>限定スイーツ</option>
+          <option>フード</option>
+          <option>限定フード</option>
+          <option>チャージ</option>
+          <option>その他</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">価格</div>
+        <input type="number" id="edit-item-price" inputmode="numeric" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeItemEditModal()">キャンセル</button>
+      <button class="modal-confirm" onclick="saveItemEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEDUP MODAL -->
+<div class="modal-overlay" id="dedup-modal">
+  <div class="modal" style="max-width:520px;max-height:80vh;display:flex;flex-direction:column">
+    <div class="modal-title">重複顧客チェック</div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px">名前・よみがなが似ている顧客を検出しました。統合したいペアを選んでください。</div>
+    <div id="dedup-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px"></div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="modal-cancel" onclick="closeDedupModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- MERGE CONFIRM MODAL -->
+<div class="modal-overlay" id="merge-modal" style="z-index:200">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">顧客を統合</div>
+    <div style="font-size:13px;color:var(--text-dim);margin-bottom:14px">どちらをメインの顧客として残しますか？もう一方のデータは合算されます。</div>
+    <div id="merge-options" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+    <div style="font-size:11px;color:var(--text-dim);background:var(--bg);border-radius:8px;padding:10px;margin-bottom:14px" id="merge-preview"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeMergeModal()">キャンセル</button>
+      <button class="modal-confirm" id="merge-confirm-btn" onclick="confirmMerge()" disabled>統合する</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== DATA =====
+const DB_ITEMS = 'mhz_items';
+const DB_SALES = 'mhz_sales';
+const DB_CUSTOMERS = 'mhz_customers';
+
+function loadItems() {
+  try { return JSON.parse(localStorage.getItem(DB_ITEMS)) || getDefaultItems(); }
+  catch { return getDefaultItems(); }
+}
+
+function saveItems(items) {
+  localStorage.setItem(DB_ITEMS, JSON.stringify(items));
+}
+
+function loadSales() {
+  try { return JSON.parse(localStorage.getItem(DB_SALES)) || {}; }
+  catch { return {}; }
+}
+
+function saveSales(sales) {
+  localStorage.setItem(DB_SALES, JSON.stringify(sales));
+}
+
+function loadCustomers() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(DB_CUSTOMERS)) || [];
+    // Merge: keep stored visits, but ensure all Square customers exist
+    const storedById = {};
+    for (const c of stored) storedById[c.id] = c;
+    const merged = IMPORTED_CUSTOMERS.map(imp => {
+      const existing = storedById[imp.id];
+      if (existing) {
+        // Keep manually added/edited fields, preserve visits
+        return { ...imp, ...existing, squareVisits: imp.squareVisits, squareTotal: imp.squareTotal, squareLastVisit: imp.squareLastVisit };
+      }
+      return imp;
+    });
+    // Also keep any manually-added customers (id > IMPORTED_CUSTOMERS.length)
+    const maxImportId = IMPORTED_CUSTOMERS[IMPORTED_CUSTOMERS.length - 1].id;
+    for (const c of stored) {
+      if (c.id > maxImportId) merged.push(c);
+    }
+    localStorage.setItem(DB_CUSTOMERS, JSON.stringify(merged));
+    return merged;
+  } catch { return IMPORTED_CUSTOMERS; }
+}
+
+function saveCustomers() {
+  localStorage.setItem(DB_CUSTOMERS, JSON.stringify(customers));
+}
+
+function getDefaultItems() {
+  return [{"id":1,"name":"Boulard カルヴァドス","category":"アルコール","price":1000},{"id":2,"name":"Koval","category":"アルコール","price":900},{"id":3,"name":"その他ビール","category":"アルコール","price":700,"variants":[{"name":"レッドアイ","price":700},{"name":"シャンディガフ","price":700},{"name":"ノンアルコールビール","price":600}]},{"id":4,"name":"ウイスキー","category":"アルコール","price":600,"variants":[{"name":"ジムビーム","price":600},{"name":"ジャックダニエル","price":800},{"name":"ターキー","price":850},{"name":"ハーパー","price":800},{"name":"メイカーズマーク","price":800},{"name":"ジェムソン","price":750},{"name":"マッカラン","price":1200},{"name":"ボーモア","price":1000},{"name":"ラフロイグ","price":1000},{"name":"アドベッグ","price":1000},{"name":"バスカーシングルモルト","price":900}]},{"id":5,"name":"カクテル","category":"アルコール","price":700,"variants":[{"name":"カクテル700","price":700},{"name":"カクテル800","price":800},{"name":"カクテル900","price":900},{"name":"カクテル1000","price":1000}]},{"id":6,"name":"クラフトジン","category":"アルコール","price":900,"variants":[{"name":"ローンウルフ","price":900},{"name":"カカオジン","price":1000},{"name":"ラムネジン","price":1100},{"name":"柚子ジン","price":900}]},{"id":7,"name":"クラフトビール","category":"アルコール","price":900,"variants":[{"name":"900","price":900},{"name":"950","price":950},{"name":"1000","price":1000},{"name":"1050","price":1050},{"name":"1100","price":1100},{"name":"1150","price":1150},{"name":"1200","price":1200},{"name":"1250","price":1250},{"name":"1300","price":1300},{"name":"1350","price":1350},{"name":"1400","price":1400},{"name":"1450","price":1450},{"name":"1500","price":1500},{"name":"1550","price":1550},{"name":"1600","price":1600},{"name":"1650","price":1650},{"name":"1700","price":1700},{"name":"1750","price":1750},{"name":"1800","price":1800},{"name":"1850","price":1850},{"name":"1900","price":1900},{"name":"1950","price":1950},{"name":"2000","price":2000}]},{"id":8,"name":"サワー","category":"アルコール","price":700,"variants":[{"name":"レモンサワー","price":700},{"name":"ジンジャー山椒","price":800},{"name":"カボスサワー","price":800},{"name":"みかんサワー","price":800},{"name":"ゆずサワー","price":800},{"name":"シークワーサー","price":800},{"name":"文旦サワー","price":800}]},{"id":9,"name":"チンザノ","category":"アルコール","price":600,"variants":[{"name":"ドライ","price":600},{"name":"ロッソ","price":600},{"name":"ビアンコ","price":600}]},{"id":10,"name":"テキーラ","category":"アルコール","price":400,"variants":[{"name":"テキーラ400","price":400},{"name":"テキーラ500","price":500}]},{"id":11,"name":"ハーブ系リキュール","category":"アルコール","price":700,"variants":[{"name":"イエガーマイスター","price":700},{"name":"ウンダーベルグ","price":800},{"name":"ペルノー","price":800}]},{"id":12,"name":"ミード","category":"アルコール","price":800,"variants":[{"name":"800","price":800},{"name":"900","price":900},{"name":"1000","price":1000}]},{"id":13,"name":"メスカル","category":"アルコール","price":800,"variants":[{"name":"ヴェルデ","price":800},{"name":"バロデコブレ","price":1000},{"name":"シエテミステリオス","price":1000}]},{"id":14,"name":"ワイン","category":"アルコール","price":600,"variants":[{"name":"赤ワイン","price":600},{"name":"白ワイン","price":600},{"name":"オレンジワイン1000","price":1000},{"name":"オレンジワイン1100","price":1100},{"name":"オレンジワイン1200","price":1200},{"name":"ホットワイン","price":700},{"name":"赤ボトル","price":3000},{"name":"白ボトル","price":3000},{"name":"スパークリングボトル","price":3000}]},{"id":15,"name":"日本酒","category":"アルコール","price":600,"variants":[{"name":"日本酒600","price":600},{"name":"日本酒650","price":650},{"name":"日本酒700","price":700},{"name":"日本酒750","price":750},{"name":"日本酒800","price":800}]},{"id":16,"name":"梅酒","category":"アルコール","price":500},{"id":17,"name":"焼酎","category":"アルコール","price":500,"variants":[{"name":"二階堂","price":500},{"name":"黒霧","price":500},{"name":"ダイヤメ","price":600},{"name":"里の曙","price":500},{"name":"鍛高譚","price":500},{"name":"白波","price":500}]},{"id":18,"name":"生ビール","category":"アルコール","price":700},{"id":19,"name":"YASOアブサン","category":"限定アルコール","price":1200},{"id":20,"name":"plowアブサン","category":"限定アルコール","price":900},{"id":21,"name":"いづつワイン","category":"限定アルコール","price":750},{"id":22,"name":"アードナムルッカン","category":"限定アルコール","price":1100},{"id":23,"name":"オーガニックカルヴァドス","category":"限定アルコール","price":1000},{"id":24,"name":"キンミヤ","category":"限定アルコール","price":300},{"id":25,"name":"クラフトコーラリキュール","category":"限定アルコール","price":700},{"id":26,"name":"スペシャルティコーヒー焼酎","category":"限定アルコール","price":600},{"id":27,"name":"バスカー スモールバッチ","category":"限定アルコール","price":1100},{"id":28,"name":"ホッピー","category":"限定アルコール","price":600},{"id":29,"name":"モヒート","category":"限定アルコール","price":850},{"id":30,"name":"姶良","category":"限定アルコール","price":600},{"id":31,"name":"梨ジントニック","category":"限定アルコール","price":850},{"id":32,"name":"コーヒー","category":"ノンアルコール","price":700,"variants":[{"name":"ホットコーヒー","price":700},{"name":"アイスコーヒー","price":700},{"name":"豆1000","price":1000},{"name":"豆2000","price":2000}]},{"id":33,"name":"シェイク","category":"ノンアルコール","price":700,"variants":[{"name":"バニラシェイク","price":700},{"name":"チョコシェイク","price":700},{"name":"塩チョコシェイク","price":800},{"name":"バナナシェイク","price":800},{"name":"チョコバナナシェイク","price":800},{"name":"チャイシェイク","price":800},{"name":"コーヒーシェイク","price":800},{"+ラム":"price","price":200}]},{"id":34,"name":"ソフトドリンク","category":"ノンアルコール","price":500,"variants":[{"name":"コーラ","price":500},{"name":"ジンジャーエール","price":500},{"name":"烏龍茶","price":500},{"name":"オレンジ","price":500},{"name":"グレープフルーツ","price":500},{"name":"アップル","price":500},{"name":"トマト","price":500},{"name":"炭酸","price":300}]},{"id":35,"name":"ティー","category":"ノンアルコール","price":700,"variants":[{"name":"アールグレイホット","price":700},{"name":"アールグレイアイス","price":750},{"name":"ルイボスティホット","price":650},{"name":"ルイボスティアイス","price":700},{"name":"ミントティーホット","price":650},{"name":"ミントティーアイス","price":700},{"name":"チャイホット","price":650},{"name":"チャイアイス","price":700},{"name":"和紅茶ホット","price":700},{"name":"和紅茶アイス","price":750}]},{"id":36,"name":"ノンアルコール","category":"ノンアルコール","price":600,"variants":[{"name":"モナンソーダ","price":600},{"name":"レッドブル","price":600},{"name":"自家製ジンジャーエール","price":700},{"name":"レモン丸ごとスカッシュ","price":700},{"name":"黒ゴマはちみつバナナ","price":700},{"name":"黒酢アップルジンジャー","price":700},{"name":"グリーンスムージー","price":700},{"name":"+プロテイン","price":200},{"name":"トマオレ","price":700}]},{"id":37,"name":"GEEKSTILL すももシロップ","category":"限定ノンアルコール","price":800},{"id":38,"name":"GINNIEノンアルジン","category":"限定ノンアルコール","price":900},{"id":39,"name":"YASOノンアルジン","category":"限定ノンアルコール","price":800},{"id":40,"name":"オーガニック酢","category":"限定ノンアルコール","price":800},{"id":41,"name":"クッキー","category":"スイーツ","price":300},{"id":42,"name":"ケーキ","category":"スイーツ","price":500,"variants":[{"name":"スパイスショコラケーキ","price":500},{"name":"ナッツとドライフルーツケーキ","price":600},{"name":"キャロットケーキ","price":600},{"name":"ビーガンチーズケーキ","price":600}]},{"id":43,"name":"バニラアイス","category":"スイーツ","price":200},{"id":44,"name":"パフェ","category":"スイーツ","price":650,"variants":[{"name":"グラモパフェ","price":650},{"name":"季節のフルーツパフェ850","price":850},{"name":"季節のフルーツパフェ900","price":900},{"name":"季節のフルーツパフェ","price":1000},{"name":"バナナとスパイスショコラパフェ","price":850}]},{"id":45,"name":"りんごとカラメルのケーキ","category":"限定スイーツ","price":600},{"id":46,"name":"ティラミス","category":"限定スイーツ","price":600},{"id":47,"name":"ブラッドオレンジケーキ","category":"限定スイーツ","price":600},{"id":48,"name":"おでん","category":"フード","price":200,"variants":[{"name":"おでん 1ヶ","price":200},{"name":"おでん 3ヶ","price":500}]},{"id":49,"name":"つまみ","category":"フード","price":400,"variants":[{"name":"ポテサラ","price":400},{"name":"チーズオリーブ","price":700},{"name":"フライドポテト","price":400},{"name":"畑の唐揚げ","price":500},{"name":"ファラフェル","price":600},{"name":"アボカドのフリット","price":450},{"name":"肉みそきゅうり","price":400},{"name":"枝豆","price":300},{"name":"スモークベーコン単品","price":500}]},{"id":50,"name":"グリルベジサラダ","category":"フード","price":800},{"id":51,"name":"ジャークチキン","category":"フード","price":800,"variants":[{"name":"単品","price":800},{"name":"+ベジ","price":350},{"name":"+チーズ","price":100},{"name":"大盛り","price":200}]},{"id":52,"name":"スナック","category":"フード","price":300,"variants":[{"name":"ポテチ","price":300},{"name":"ナッツ","price":400}]},{"id":53,"name":"スパイスカレー","category":"フード","price":400,"variants":[{"name":"+チキン","price":400},{"name":"+チーズ","price":100},{"name":"焼きカレー","price":1100},{"name":"大盛り","price":200}]},{"id":54,"name":"ナポリタン","category":"フード","price":800},{"id":55,"name":"ビーガンプレート","category":"フード","price":1100},{"id":56,"name":"ピザ","category":"フード","price":900,"variants":[{"name":"野菜ピザ","price":900},{"name":"スモークベーコンピザ","price":1000},{"name":"サーディンとオリーブのピザ","price":1000},{"name":"きのことブルーチーズピザ","price":900},{"name":"+はちみつ","price":100}]},{"id":57,"name":"フィッシュアンドチップス","category":"フード","price":800},{"id":58,"name":"ライス単品","category":"フード","price":300},{"id":59,"name":"ごま油冷奴","category":"限定フード","price":350},{"id":60,"name":"ネギ塩サバ缶","category":"限定フード","price":500},{"id":61,"name":"メガの唐揚げ","category":"限定フード","price":600},{"id":62,"name":"干し柿クリームチーズ","category":"限定フード","price":700},{"id":63,"name":"菊芋の天ぷら","category":"限定フード","price":500},{"id":64,"name":"豚汁唐揚げ定食","category":"限定フード","price":1200},{"id":65,"name":"チャージ300","category":"チャージ","price":300},{"id":66,"name":"チャージ500","category":"チャージ","price":500},{"id":67,"name":"Fredaレモネード","category":"その他","price":1000},{"id":68,"name":"Geekstore すももシロップ","category":"その他","price":800},{"id":69,"name":"KANOSUKE","category":"その他","price":1200},{"id":70,"name":"いちごクリームチーズ","category":"その他","price":600},{"id":71,"name":"すももシロップ","category":"その他","price":800},{"id":72,"name":"ウィンターマリンバ","category":"その他","price":900},{"id":73,"name":"キルホーマン","category":"その他","price":1200},{"id":74,"name":"タコス","category":"その他","price":500},{"id":75,"name":"ブラッドオレンジとカラメルのケーキ","category":"その他","price":600},{"id":76,"name":"ホットサンド","category":"その他","price":500,"variants":[{"name":"500","price":500},{"name":"800","price":800},{"name":"1000","price":1000}]},{"id":77,"name":"ボム","category":"その他","price":500,"variants":[{"name":"ボム500","price":500},{"name":"ボム600","price":600}]},{"id":78,"name":"モヒートアイスコーヒー","category":"その他","price":800},{"id":79,"name":"古代カシス","category":"その他","price":1000,"variants":[{"name":"+アルコール","price":1000}]},{"id":80,"name":"油淋鶏プレート","category":"その他","price":1000},{"id":81,"name":"油淋鶏単品","category":"その他","price":800},{"id":82,"name":"自家製レモネード","category":"その他","price":700},{"id":83,"name":"駒ヶ岳 シングルモルト","category":"その他","price":1200},{"id":84,"name":"鶏白湯スープ","category":"その他","price":600}];
+}
+
+const IMPORTED_CUSTOMERS = [{"id": 1, "name": "Pちゃん VJ", "kana": "pちゃん ぴーちゃん", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1200, "squareLastVisit": "2025-10-15", "squareFirstVisit": "2025-10-15", "visits": []}, {"id": 2, "name": "あき FIND", "kana": "あき", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 6000, "squareLastVisit": "2025-11-28", "squareFirstVisit": "2025-10-01", "visits": []}, {"id": 3, "name": "あまね Amane", "kana": "あまね", "phone": "", "memo": "", "squareVisits": 55, "squareTotal": 116500, "squareLastVisit": "2026-02-17", "squareFirstVisit": "2025-01-17", "visits": []}, {"id": 4, "name": "あや たぬき庵", "kana": "あや", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 12800, "squareLastVisit": "2026-02-10", "squareFirstVisit": "2025-04-18", "visits": []}, {"id": 5, "name": "あやこさん Ayako dj", "kana": "あやこ", "phone": "", "memo": "", "squareVisits": 19, "squareTotal": 44800, "squareLastVisit": "2026-02-26", "squareFirstVisit": "2025-06-05", "visits": []}, {"id": 6, "name": "あやね DJ", "kana": "あやね", "phone": "", "memo": "", "squareVisits": 6, "squareTotal": 10800, "squareLastVisit": "2026-02-10", "squareFirstVisit": "2025-02-08", "visits": []}, {"id": 7, "name": "荒木昌和 アラーキーAraki 行政書士", "kana": "あらき あらーきー", "phone": "", "memo": "", "squareVisits": 17, "squareTotal": 33350, "squareLastVisit": "2026-02-27", "squareFirstVisit": "2025-05-03", "visits": []}, {"id": 8, "name": "あらき 絵描き", "kana": "あらき", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 4500, "squareLastVisit": "2025-11-05", "squareFirstVisit": "2025-01-25", "visits": []}, {"id": 9, "name": "アルマ DJ", "kana": "あるま", "phone": "", "memo": "", "squareVisits": 58, "squareTotal": 83150, "squareLastVisit": "2026-02-28", "squareFirstVisit": "2025-01-12", "visits": []}, {"id": 10, "name": "飯山さん", "kana": "いいやまさん", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 8600, "squareLastVisit": "2025-10-22", "squareFirstVisit": "2025-07-26", "visits": []}, {"id": 11, "name": "石川　Ishikawa", "kana": "いしかわ", "phone": "", "memo": "", "squareVisits": 33, "squareTotal": 89750, "squareLastVisit": "2026-02-28", "squareFirstVisit": "2025-01-12", "visits": []}, {"id": 12, "name": "磯部 いそべ", "kana": "いそべ", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 12600, "squareLastVisit": "2025-05-21", "squareFirstVisit": "2025-03-19", "visits": []}, {"id": 13, "name": "いっせい yes", "kana": "いっせい", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 3200, "squareLastVisit": "2025-07-30", "squareFirstVisit": "2025-07-30", "visits": []}, {"id": 14, "name": "今泉さん Ima", "kana": "いまいずみ", "phone": "", "memo": "", "squareVisits": 15, "squareTotal": 62900, "squareLastVisit": "2026-02-21", "squareFirstVisit": "2025-04-29", "visits": []}, {"id": 15, "name": "うら VJ", "kana": "うら", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 8600, "squareLastVisit": "2025-07-03", "squareFirstVisit": "2025-05-31", "visits": []}, {"id": 16, "name": "えり DJ", "kana": "えり", "phone": "", "memo": "", "squareVisits": 11, "squareTotal": 22150, "squareLastVisit": "2025-11-22", "squareFirstVisit": "2025-01-12", "visits": []}, {"id": 17, "name": "えりあ", "kana": "えりあ", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 8300, "squareLastVisit": "2025-10-30", "squareFirstVisit": "2025-03-21", "visits": []}, {"id": 18, "name": "江里口さん", "kana": "えりぐち", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 16500, "squareLastVisit": "2025-10-31", "squareFirstVisit": "2025-05-03", "visits": []}, {"id": 19, "name": "おおが まめお", "kana": "おおが まめお", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 2400, "squareLastVisit": "2025-06-25", "squareFirstVisit": "2025-05-13", "visits": []}, {"id": 20, "name": "大西 親子", "kana": "おおにし", "phone": "", "memo": "", "squareVisits": 7, "squareTotal": 14900, "squareLastVisit": "2025-12-19", "squareFirstVisit": "2025-09-11", "visits": []}, {"id": 21, "name": "奥永 TOY", "kana": "おくなが", "phone": "", "memo": "", "squareVisits": 19, "squareTotal": 40250, "squareLastVisit": "2026-02-11", "squareFirstVisit": "2025-01-17", "visits": []}, {"id": 22, "name": "おたろ", "kana": "おたろ", "phone": "", "memo": "", "squareVisits": 8, "squareTotal": 41800, "squareLastVisit": "2026-02-27", "squareFirstVisit": "2025-02-28", "visits": []}, {"id": 23, "name": "おち みほ", "kana": "おち みほ", "phone": "", "memo": "", "squareVisits": 30, "squareTotal": 292900, "squareLastVisit": "2026-02-05", "squareFirstVisit": "2025-01-24", "visits": []}, {"id": 24, "name": "小野 トイレッツ　藤田商事(株)", "kana": "おの", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 27300, "squareLastVisit": "2025-10-25", "squareFirstVisit": "2025-03-25", "visits": []}, {"id": 25, "name": "オリベさん", "kana": "おりべさん", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 14100, "squareLastVisit": "2026-02-24", "squareFirstVisit": "2025-06-19", "visits": []}, {"id": 26, "name": "かおり DJ", "kana": "かおり", "phone": "", "memo": "", "squareVisits": 12, "squareTotal": 21400, "squareLastVisit": "2026-02-20", "squareFirstVisit": "2025-01-17", "visits": []}, {"id": 27, "name": "かずね DJ Kazune", "kana": "かずね", "phone": "", "memo": "", "squareVisits": 15, "squareTotal": 23050, "squareLastVisit": "2026-02-17", "squareFirstVisit": "2025-01-18", "visits": []}, {"id": 28, "name": "かな スタッフ", "kana": "かな", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1750, "squareLastVisit": "2025-01-25", "squareFirstVisit": "2025-01-25", "visits": []}, {"id": 29, "name": "かなた ブルーミー", "kana": "かなた", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 17550, "squareLastVisit": "2025-08-27", "squareFirstVisit": "2025-06-12", "visits": []}, {"id": 30, "name": "かめしげ", "kana": "かめしげ", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 22600, "squareLastVisit": "2025-08-21", "squareFirstVisit": "2025-03-13", "visits": []}, {"id": 31, "name": "川上 田口商店", "kana": "かわかみ", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 12500, "squareLastVisit": "2025-11-22", "squareFirstVisit": "2025-01-19", "visits": []}, {"id": 32, "name": "がく DJ Gaku", "kana": "がくがく", "phone": "", "memo": "", "squareVisits": 24, "squareTotal": 72800, "squareLastVisit": "2026-02-28", "squareFirstVisit": "2025-02-19", "visits": []}, {"id": 33, "name": "ガージ MC", "kana": "がーじ", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 2500, "squareLastVisit": "2025-10-10", "squareFirstVisit": "2025-10-10", "visits": []}, {"id": 34, "name": "ガージさん", "kana": "がーじ", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 2750, "squareLastVisit": "2025-05-09", "squareFirstVisit": "2025-05-09", "visits": []}, {"id": 35, "name": "きで 大阪", "kana": "きで", "phone": "", "memo": "", "squareVisits": 6, "squareTotal": 35100, "squareLastVisit": "2025-06-25", "squareFirstVisit": "2025-01-17", "visits": []}, {"id": 36, "name": "くすだ ちか", "kana": "くすだ ちか", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 2400, "squareLastVisit": "2025-01-19", "squareFirstVisit": "2025-01-19", "visits": []}, {"id": 37, "name": "くすだ ちか", "kana": "くすだ ちかちか", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 800, "squareLastVisit": "2025-06-18", "squareFirstVisit": "2025-06-18", "visits": []}, {"id": 38, "name": "くまさきさん", "kana": "くまさき", "phone": "", "memo": "", "squareVisits": 6, "squareTotal": 9200, "squareLastVisit": "2025-05-10", "squareFirstVisit": "2025-01-15", "visits": []}, {"id": 39, "name": "倉橋", "kana": "くらはし", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 11850, "squareLastVisit": "2025-10-22", "squareFirstVisit": "2025-04-10", "visits": []}, {"id": 40, "name": "くり DJ", "kana": "くり", "phone": "", "memo": "", "squareVisits": 18, "squareTotal": 99100, "squareLastVisit": "2026-02-20", "squareFirstVisit": "2025-01-17", "visits": []}, {"id": 41, "name": "けいこ さつまじ", "kana": "けいこ", "phone": "", "memo": "", "squareVisits": 26, "squareTotal": 76600, "squareLastVisit": "2026-02-26", "squareFirstVisit": "2025-01-14", "visits": []}, {"id": 42, "name": "けいご JAP ON EARTH", "kana": "けいご", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 9600, "squareLastVisit": "2025-10-30", "squareFirstVisit": "2025-02-13", "visits": []}, {"id": 43, "name": "ksk DJ", "kana": "けいすけ", "phone": "", "memo": "", "squareVisits": 6, "squareTotal": 30050, "squareLastVisit": "2026-02-28", "squareFirstVisit": "2025-03-28", "visits": []}, {"id": 44, "name": "けんご free p", "kana": "けんご", "phone": "", "memo": "", "squareVisits": 9, "squareTotal": 16600, "squareLastVisit": "2026-02-18", "squareFirstVisit": "2025-05-13", "visits": []}, {"id": 45, "name": "けんしろう DJ kexuu", "kana": "けんしろう", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 13500, "squareLastVisit": "2026-02-28", "squareFirstVisit": "2025-01-26", "visits": []}, {"id": 46, "name": "けんた DJ Kenta ima", "kana": "けんた", "phone": "", "memo": "", "squareVisits": 9, "squareTotal": 16950, "squareLastVisit": "2026-02-28", "squareFirstVisit": "2025-01-26", "visits": []}, {"id": 47, "name": "けんと DJ Kent", "kana": "けんと", "phone": "", "memo": "", "squareVisits": 16, "squareTotal": 34700, "squareLastVisit": "2026-02-21", "squareFirstVisit": "2025-01-14", "visits": []}, {"id": 48, "name": "けんと ドラドラ後輩", "kana": "けんと", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 3000, "squareLastVisit": "2025-03-06", "squareFirstVisit": "2025-01-14", "visits": []}, {"id": 49, "name": "けんと 広島", "kana": "けんと", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 3000, "squareLastVisit": "2025-08-14", "squareFirstVisit": "2025-05-03", "visits": []}, {"id": 50, "name": "げんさん シンガー", "kana": "げんさん", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 11450, "squareLastVisit": "2025-09-19", "squareFirstVisit": "2025-05-02", "visits": []}, {"id": 51, "name": "charo", "kana": "こうたろう", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 2500, "squareLastVisit": "2026-02-18", "squareFirstVisit": "2026-02-07", "visits": []}, {"id": 52, "name": "こうたろう 築城自衛隊", "kana": "こうたろう", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 3300, "squareLastVisit": "2025-02-15", "squareFirstVisit": "2025-01-24", "visits": []}, {"id": 53, "name": "cody", "kana": "こうだい こーでぃ", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 3700, "squareLastVisit": "2025-10-22", "squareFirstVisit": "2025-05-03", "visits": []}, {"id": 54, "name": "こじまさん 沖縄", "kana": "こじま", "phone": "", "memo": "", "squareVisits": 24, "squareTotal": 61800, "squareLastVisit": "2026-02-26", "squareFirstVisit": "2025-01-18", "visits": []}, {"id": 55, "name": "こず 写真", "kana": "こず", "phone": "", "memo": "", "squareVisits": 13, "squareTotal": 33600, "squareLastVisit": "2026-01-27", "squareFirstVisit": "2025-01-31", "visits": []}, {"id": 56, "name": "コズル DJ", "kana": "こずる", "phone": "", "memo": "", "squareVisits": 9, "squareTotal": 7800, "squareLastVisit": "2026-02-25", "squareFirstVisit": "2025-01-29", "visits": []}, {"id": 57, "name": "こなつ 元ブルーミー", "kana": "こなつ", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 3950, "squareLastVisit": "2025-09-26", "squareFirstVisit": "2025-05-25", "visits": []}, {"id": 58, "name": "コーディ cody", "kana": "こーでぃ", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 9550, "squareLastVisit": "2025-07-13", "squareFirstVisit": "2025-01-18", "visits": []}, {"id": 59, "name": "サウンドインプレッション", "kana": "さうんどいんぷれっしょん", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 3950, "squareLastVisit": "2025-09-30", "squareFirstVisit": "2025-09-16", "visits": []}, {"id": 60, "name": "さかっち", "kana": "さかっち", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 19400, "squareLastVisit": "2025-10-26", "squareFirstVisit": "2025-05-18", "visits": []}, {"id": 61, "name": "さとうさん", "kana": "さとう", "phone": "", "memo": "", "squareVisits": 24, "squareTotal": 103550, "squareLastVisit": "2025-12-27", "squareFirstVisit": "2025-01-23", "visits": []}, {"id": 62, "name": "さとし DJ", "kana": "さとし", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1750, "squareLastVisit": "2025-06-06", "squareFirstVisit": "2025-06-06", "visits": []}, {"id": 63, "name": "ザキさん 中崎", "kana": "ざきさん", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 18650, "squareLastVisit": "2025-10-30", "squareFirstVisit": "2025-01-26", "visits": []}, {"id": 64, "name": "しおり BIGBAND", "kana": "しおり", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1200, "squareLastVisit": "2025-02-07", "squareFirstVisit": "2025-02-07", "visits": []}, {"id": 65, "name": "シゲ sowaka", "kana": "しげ", "phone": "", "memo": "", "squareVisits": 9, "squareTotal": 24700, "squareLastVisit": "2025-09-13", "squareFirstVisit": "2025-04-22", "visits": []}, {"id": 66, "name": "シバケン", "kana": "しばけん", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 5200, "squareLastVisit": "2025-09-16", "squareFirstVisit": "2025-07-02", "visits": []}, {"id": 67, "name": "しぶやさん 野田さん友人", "kana": "しぶや", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 7050, "squareLastVisit": "2025-07-17", "squareFirstVisit": "2025-03-25", "visits": []}, {"id": 68, "name": "しほ 元スタッフ", "kana": "しほ", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 5850, "squareLastVisit": "2025-04-18", "squareFirstVisit": "2025-04-18", "visits": []}, {"id": 69, "name": "しまちん", "kana": "しまちん", "phone": "", "memo": "", "squareVisits": 12, "squareTotal": 26650, "squareLastVisit": "2025-10-30", "squareFirstVisit": "2025-02-22", "visits": []}, {"id": 70, "name": "下川 ADAD", "kana": "しもかわ", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 18850, "squareLastVisit": "2025-08-14", "squareFirstVisit": "2025-01-30", "visits": []}, {"id": 71, "name": "しゅう DJ", "kana": "しゅう", "phone": "", "memo": "", "squareVisits": 12, "squareTotal": 51900, "squareLastVisit": "2025-11-14", "squareFirstVisit": "2025-01-24", "visits": []}, {"id": 72, "name": "デンジャー シュウ", "kana": "しゅう", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 4050, "squareLastVisit": "2025-06-19", "squareFirstVisit": "2025-01-12", "visits": []}, {"id": 73, "name": "しゅんしゅん DJ", "kana": "しゅんしゅん", "phone": "", "memo": "", "squareVisits": 6, "squareTotal": 17150, "squareLastVisit": "2025-06-17", "squareFirstVisit": "2025-01-21", "visits": []}, {"id": 74, "name": "しょうた リンサガ", "kana": "しょうた", "phone": "", "memo": "", "squareVisits": 15, "squareTotal": 33900, "squareLastVisit": "2025-11-22", "squareFirstVisit": "2025-03-06", "visits": []}, {"id": 75, "name": "白石 DJ", "kana": "しらいし", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 900, "squareLastVisit": "2025-09-24", "squareFirstVisit": "2025-09-24", "visits": []}, {"id": 76, "name": "しんさん DJ", "kana": "しんさん", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 5500, "squareLastVisit": "2026-02-20", "squareFirstVisit": "2025-02-22", "visits": []}, {"id": 77, "name": "しんたろう DJ", "kana": "しんたろう", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 4500, "squareLastVisit": "2025-11-26", "squareFirstVisit": "2025-03-21", "visits": []}, {"id": 78, "name": "しんたろう 葉", "kana": "しんたろう", "phone": "", "memo": "", "squareVisits": 6, "squareTotal": 31300, "squareLastVisit": "2025-05-24", "squareFirstVisit": "2025-02-18", "visits": []}, {"id": 79, "name": "Jei", "kana": "じぇい", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 2600, "squareLastVisit": "2025-07-13", "squareFirstVisit": "2025-07-13", "visits": []}, {"id": 80, "name": "十三 ドラマー", "kana": "じゅうぞう", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 7750, "squareLastVisit": "2026-01-14", "squareFirstVisit": "2025-06-01", "visits": []}, {"id": 81, "name": "ジュディ ダンサー", "kana": "じゅでぃ", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 8550, "squareLastVisit": "2026-01-21", "squareFirstVisit": "2025-01-22", "visits": []}, {"id": 82, "name": "スエ HOUSE", "kana": "すえ", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 7250, "squareLastVisit": "2025-10-31", "squareFirstVisit": "2025-04-08", "visits": []}, {"id": 83, "name": "スカイガーデン DJ", "kana": "すかいがーでん", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 3150, "squareLastVisit": "2025-02-22", "squareFirstVisit": "2025-02-22", "visits": []}, {"id": 84, "name": "鈴木さん　Suzuki 野田さん友人ズッキー", "kana": "すずき", "phone": "", "memo": "", "squareVisits": 14, "squareTotal": 62400, "squareLastVisit": "2026-03-04", "squareFirstVisit": "2025-05-29", "visits": []}, {"id": 85, "name": "セイさん DJ", "kana": "せいさん", "phone": "", "memo": "", "squareVisits": 17, "squareTotal": 98150, "squareLastVisit": "2025-12-26", "squareFirstVisit": "2025-01-25", "visits": []}, {"id": 86, "name": "せな DJ", "kana": "せな", "phone": "", "memo": "", "squareVisits": 23, "squareTotal": 70400, "squareLastVisit": "2026-02-18", "squareFirstVisit": "2025-01-21", "visits": []}, {"id": 87, "name": "世阿弥", "kana": "ぜあみ", "phone": "", "memo": "", "squareVisits": 25, "squareTotal": 40550, "squareLastVisit": "2025-12-24", "squareFirstVisit": "2025-04-08", "visits": []}, {"id": 88, "name": "外田さん", "kana": "そとださん", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1200, "squareLastVisit": "2025-08-02", "squareFirstVisit": "2025-08-02", "visits": []}, {"id": 89, "name": "SALT DJ", "kana": "そると", "phone": "", "memo": "", "squareVisits": 8, "squareTotal": 36500, "squareLastVisit": "2026-02-26", "squareFirstVisit": "2025-05-29", "visits": []}, {"id": 90, "name": "たけ DJ", "kana": "たけ", "phone": "", "memo": "", "squareVisits": 33, "squareTotal": 130700, "squareLastVisit": "2025-11-20", "squareFirstVisit": "2025-01-12", "visits": []}, {"id": 91, "name": "TACO DJ", "kana": "たこ", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 10700, "squareLastVisit": "2026-01-16", "squareFirstVisit": "2025-06-28", "visits": []}, {"id": 92, "name": "立石 DJ", "kana": "たていし", "phone": "", "memo": "", "squareVisits": 25, "squareTotal": 111950, "squareLastVisit": "2026-02-20", "squareFirstVisit": "2025-01-12", "visits": []}, {"id": 93, "name": "たろう ドラマーtaro", "kana": "たろう", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 12800, "squareLastVisit": "2026-02-04", "squareFirstVisit": "2025-02-16", "visits": []}, {"id": 94, "name": "ちくわ キラキラ", "kana": "ちくわ", "phone": "", "memo": "", "squareVisits": 12, "squareTotal": 35700, "squareLastVisit": "2025-11-05", "squareFirstVisit": "2025-04-05", "visits": []}, {"id": 95, "name": "ちひろ ギラヴァンツ", "kana": "ちひろ", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 4500, "squareLastVisit": "2025-04-24", "squareFirstVisit": "2025-04-24", "visits": []}, {"id": 96, "name": "チャイナ 大阪", "kana": "ちゃいな", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1500, "squareLastVisit": "2025-04-03", "squareFirstVisit": "2025-04-03", "visits": []}, {"id": 97, "name": "チャロ", "kana": "ちゃろ", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 17800, "squareLastVisit": "2025-10-30", "squareFirstVisit": "2025-09-13", "visits": []}, {"id": 98, "name": "てっしー", "kana": "てっしー", "phone": "", "memo": "", "squareVisits": 8, "squareTotal": 22050, "squareLastVisit": "2026-02-17", "squareFirstVisit": "2025-02-18", "visits": []}, {"id": 99, "name": "トシボー DJ", "kana": "としぼー", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 13600, "squareLastVisit": "2026-01-16", "squareFirstVisit": "2025-03-28", "visits": []}, {"id": 100, "name": "ともかちゃん", "kana": "ともか", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 15650, "squareLastVisit": "2025-11-26", "squareFirstVisit": "2025-01-16", "visits": []}, {"id": 101, "name": "ともやす 音も達", "kana": "ともやす", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 3900, "squareLastVisit": "2026-02-26", "squareFirstVisit": "2025-08-11", "visits": []}, {"id": 102, "name": "ドラドラゆうた dj dora", "kana": "どらどらゆうた", "phone": "", "memo": "", "squareVisits": 82, "squareTotal": 134500, "squareLastVisit": "2026-02-17", "squareFirstVisit": "2025-01-14", "visits": []}, {"id": 103, "name": "ドン ウガンダ", "kana": "どん", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1700, "squareLastVisit": "2025-09-11", "squareFirstVisit": "2025-09-11", "visits": []}, {"id": 104, "name": "中島 旅する選曲家　Naka", "kana": "なかしま", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 10800, "squareLastVisit": "2026-02-14", "squareFirstVisit": "2025-02-28", "visits": []}, {"id": 105, "name": "中島　Naka-g DJ練習", "kana": "なかしま", "phone": "", "memo": "", "squareVisits": 40, "squareTotal": 123850, "squareLastVisit": "2026-02-28", "squareFirstVisit": "2025-01-17", "visits": []}, {"id": 106, "name": "中村 先生", "kana": "なかむら せんせい", "phone": "", "memo": "", "squareVisits": 10, "squareTotal": 31950, "squareLastVisit": "2026-01-21", "squareFirstVisit": "2025-03-19", "visits": []}, {"id": 107, "name": "中村 taptap", "kana": "なかむら", "phone": "", "memo": "", "squareVisits": 8, "squareTotal": 35050, "squareLastVisit": "2025-12-23", "squareFirstVisit": "2025-03-18", "visits": []}, {"id": 108, "name": "ながたさん", "kana": "ながた", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 8350, "squareLastVisit": "2025-05-20", "squareFirstVisit": "2025-04-28", "visits": []}, {"id": 109, "name": "永露 アメ", "kana": "ながつゆ あめ", "phone": "", "memo": "", "squareVisits": 13, "squareTotal": 26900, "squareLastVisit": "2026-02-26", "squareFirstVisit": "2025-01-23", "visits": []}, {"id": 110, "name": "名越 まり", "kana": "なごし まり", "phone": "", "memo": "", "squareVisits": 9, "squareTotal": 28600, "squareLastVisit": "2026-02-18", "squareFirstVisit": "2025-03-18", "visits": []}, {"id": 111, "name": "なつほ おいとま", "kana": "なつほ", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 3300, "squareLastVisit": "2025-01-25", "squareFirstVisit": "2025-01-25", "visits": []}, {"id": 112, "name": "なつみ サリンジャ　sari natsu dj", "kana": "なつみ", "phone": "", "memo": "", "squareVisits": 20, "squareTotal": 37850, "squareLastVisit": "2026-03-06", "squareFirstVisit": "2025-03-06", "visits": []}, {"id": 113, "name": "成田さん レコかけ隊", "kana": "なりたさん", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 8100, "squareLastVisit": "2025-11-22", "squareFirstVisit": "2025-07-26", "visits": []}, {"id": 114, "name": "ねいろ DJ", "kana": "ねいろ", "phone": "", "memo": "", "squareVisits": 7, "squareTotal": 9400, "squareLastVisit": "2025-12-24", "squareFirstVisit": "2025-08-02", "visits": []}, {"id": 115, "name": "のすけ イエローカード", "kana": "のすけ", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 11700, "squareLastVisit": "2025-08-02", "squareFirstVisit": "2025-01-14", "visits": []}, {"id": 116, "name": "野田 DJ Noda", "kana": "のだ", "phone": "", "memo": "", "squareVisits": 25, "squareTotal": 66100, "squareLastVisit": "2026-02-10", "squareFirstVisit": "2025-01-14", "visits": []}, {"id": 117, "name": "のぶ おいとま", "kana": "のぶ", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 8850, "squareLastVisit": "2025-10-02", "squareFirstVisit": "2025-03-14", "visits": []}, {"id": 118, "name": "のぶーさん　mondo No boo do", "kana": "のぶーさん", "phone": "", "memo": "", "squareVisits": 9, "squareTotal": 10100, "squareLastVisit": "2026-03-06", "squareFirstVisit": "2025-06-04", "visits": []}, {"id": 119, "name": "はすみ ポップコーン", "kana": "はすみ", "phone": "", "memo": "", "squareVisits": 8, "squareTotal": 23450, "squareLastVisit": "2025-12-18", "squareFirstVisit": "2025-01-19", "visits": []}, {"id": 120, "name": "はち", "kana": "はち", "phone": "", "memo": "", "squareVisits": 12, "squareTotal": 36100, "squareLastVisit": "2025-03-06", "squareFirstVisit": "2025-01-14", "visits": []}, {"id": 121, "name": "パステル hive", "kana": "ぱすてる", "phone": "", "memo": "", "squareVisits": 12, "squareTotal": 28100, "squareLastVisit": "2025-11-20", "squareFirstVisit": "2025-01-30", "visits": []}, {"id": 122, "name": "ひより DJ", "kana": "ひより", "phone": "", "memo": "", "squareVisits": 33, "squareTotal": 59750, "squareLastVisit": "2026-02-28", "squareFirstVisit": "2025-01-12", "visits": []}, {"id": 123, "name": "ひらおさん 抹茶", "kana": "ひらお", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 6850, "squareLastVisit": "2025-08-29", "squareFirstVisit": "2025-03-21", "visits": []}, {"id": 124, "name": "ヒロ ダンサー", "kana": "ひろ", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 6700, "squareLastVisit": "2026-02-06", "squareFirstVisit": "2025-02-02", "visits": []}, {"id": 125, "name": "ヒロ 美容師", "kana": "ひろひろ", "phone": "", "memo": "", "squareVisits": 48, "squareTotal": 95550, "squareLastVisit": "2026-01-17", "squareFirstVisit": "2025-01-15", "visits": []}, {"id": 126, "name": "ひろみ パティシエ", "kana": "ひろみ", "phone": "", "memo": "", "squareVisits": 6, "squareTotal": 24550, "squareLastVisit": "2025-08-31", "squareFirstVisit": "2025-01-21", "visits": []}, {"id": 127, "name": "ふくみ DJ", "kana": "ふくみ", "phone": "", "memo": "", "squareVisits": 14, "squareTotal": 77900, "squareLastVisit": "2026-01-21", "squareFirstVisit": "2025-01-17", "visits": []}, {"id": 128, "name": "藤井 魚座", "kana": "ふじい", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 2800, "squareLastVisit": "2025-08-31", "squareFirstVisit": "2025-08-31", "visits": []}, {"id": 129, "name": "ふみえ むぎまめ", "kana": "ふみえ むぎまめ", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 3800, "squareLastVisit": "2025-10-31", "squareFirstVisit": "2025-09-09", "visits": []}, {"id": 130, "name": "古田さん ふる", "kana": "ふるた", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 18050, "squareLastVisit": "2026-02-06", "squareFirstVisit": "2025-05-23", "visits": []}, {"id": 131, "name": "ふるみ", "kana": "ふるみ", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 4900, "squareLastVisit": "2025-06-03", "squareFirstVisit": "2025-06-03", "visits": []}, {"id": 132, "name": "ブッチ ぶち", "kana": "ぶっち ぶち", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 4700, "squareLastVisit": "2025-05-11", "squareFirstVisit": "2025-02-22", "visits": []}, {"id": 133, "name": "べべ Bebe フランス", "kana": "べべ", "phone": "", "memo": "", "squareVisits": 10, "squareTotal": 30700, "squareLastVisit": "2026-03-10", "squareFirstVisit": "2025-06-05", "visits": []}, {"id": 134, "name": "Ben", "kana": "べん", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 5700, "squareLastVisit": "2025-11-26", "squareFirstVisit": "2025-01-16", "visits": []}, {"id": 135, "name": "ポール スタッフ", "kana": "ぽーる", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 3050, "squareLastVisit": "2025-07-21", "squareFirstVisit": "2025-04-05", "visits": []}, {"id": 136, "name": "まいさん メイク　葉", "kana": "まい は", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 12850, "squareLastVisit": "2025-11-14", "squareFirstVisit": "2025-02-08", "visits": []}, {"id": 137, "name": "まお ダンサー", "kana": "まお", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 6600, "squareLastVisit": "2025-06-28", "squareFirstVisit": "2025-06-14", "visits": []}, {"id": 138, "name": "毛", "kana": "まお", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1850, "squareLastVisit": "2025-05-03", "squareFirstVisit": "2025-05-03", "visits": []}, {"id": 139, "name": "まっしー DJ", "kana": "まっしー", "phone": "", "memo": "", "squareVisits": 13, "squareTotal": 31750, "squareLastVisit": "2026-02-11", "squareFirstVisit": "2025-02-12", "visits": []}, {"id": 140, "name": "まほ DJ Maho", "kana": "まほ", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 6050, "squareLastVisit": "2026-02-19", "squareFirstVisit": "2025-01-25", "visits": []}, {"id": 141, "name": "まみ", "kana": "まみまみ", "phone": "", "memo": "", "squareVisits": 6, "squareTotal": 11650, "squareLastVisit": "2025-05-20", "squareFirstVisit": "2025-04-24", "visits": []}, {"id": 142, "name": "まゆりん", "kana": "まゆりん", "phone": "", "memo": "", "squareVisits": 6, "squareTotal": 31700, "squareLastVisit": "2025-10-17", "squareFirstVisit": "2025-02-12", "visits": []}, {"id": 143, "name": "まりあ", "kana": "まりあ", "phone": "", "memo": "", "squareVisits": 8, "squareTotal": 23450, "squareLastVisit": "2025-05-27", "squareFirstVisit": "2025-02-15", "visits": []}, {"id": 144, "name": "まりさ", "kana": "まりさ", "phone": "", "memo": "", "squareVisits": 9, "squareTotal": 27200, "squareLastVisit": "2025-12-04", "squareFirstVisit": "2025-03-06", "visits": []}, {"id": 145, "name": "まる君 佐藤さん後輩", "kana": "まる", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 36650, "squareLastVisit": "2025-08-02", "squareFirstVisit": "2025-06-12", "visits": []}, {"id": 146, "name": "みお セカンドフィッツロイ", "kana": "みお セカンドフィッツロイ", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 2900, "squareLastVisit": "2025-10-15", "squareFirstVisit": "2025-10-15", "visits": []}, {"id": 147, "name": "みか ロゼット", "kana": "みか", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 20100, "squareLastVisit": "2025-09-19", "squareFirstVisit": "2025-03-21", "visits": []}, {"id": 148, "name": "みなと DJ", "kana": "みなとみなと", "phone": "", "memo": "", "squareVisits": 6, "squareTotal": 16400, "squareLastVisit": "2026-02-11", "squareFirstVisit": "2025-03-05", "visits": []}, {"id": 149, "name": "みなみ 看護師", "kana": "みなみ", "phone": "", "memo": "", "squareVisits": 14, "squareTotal": 42250, "squareLastVisit": "2025-10-28", "squareFirstVisit": "2025-01-23", "visits": []}, {"id": 150, "name": "みなみさん まりあさん", "kana": "みなみさん まりあさん", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 7950, "squareLastVisit": "2025-06-12", "squareFirstVisit": "2025-06-12", "visits": []}, {"id": 151, "name": "宮本さん", "kana": "みやもとさん", "phone": "", "memo": "", "squareVisits": 6, "squareTotal": 32150, "squareLastVisit": "2026-02-24", "squareFirstVisit": "2025-09-19", "visits": []}, {"id": 152, "name": "みるこん", "kana": "みるこん", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 18050, "squareLastVisit": "2025-08-31", "squareFirstVisit": "2025-05-31", "visits": []}, {"id": 153, "name": "ムネ future studio", "kana": "むね", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 2150, "squareLastVisit": "2025-06-18", "squareFirstVisit": "2025-06-18", "visits": []}, {"id": 154, "name": "MUNGUNI むんぐに", "kana": "むんぐに", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 9250, "squareLastVisit": "2025-10-30", "squareFirstVisit": "2025-09-16", "visits": []}, {"id": 155, "name": "めぐ ミツさん奥さん", "kana": "めぐ", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 4950, "squareLastVisit": "2025-10-30", "squareFirstVisit": "2025-01-31", "visits": []}, {"id": 156, "name": "meff DJ", "kana": "めふ", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 17100, "squareLastVisit": "2025-09-17", "squareFirstVisit": "2025-04-10", "visits": []}, {"id": 157, "name": "モウリー DJ", "kana": "もうりー", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 10500, "squareLastVisit": "2025-10-26", "squareFirstVisit": "2025-02-12", "visits": []}, {"id": 158, "name": "もも　Momo 桃源郷 dj", "kana": "もも", "phone": "", "memo": "", "squareVisits": 11, "squareTotal": 28400, "squareLastVisit": "2026-01-30", "squareFirstVisit": "2025-05-18", "visits": []}, {"id": 159, "name": "もりたか", "kana": "もりたか", "phone": "", "memo": "", "squareVisits": 8, "squareTotal": 41550, "squareLastVisit": "2026-02-28", "squareFirstVisit": "2025-01-19", "visits": []}, {"id": 160, "name": "モーターさん", "kana": "もーたー", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 6100, "squareLastVisit": "2025-10-21", "squareFirstVisit": "2025-04-28", "visits": []}, {"id": 161, "name": "モーリー さつまじ", "kana": "もーりー", "phone": "", "memo": "", "squareVisits": 12, "squareTotal": 27050, "squareLastVisit": "2026-02-11", "squareFirstVisit": "2025-01-15", "visits": []}, {"id": 162, "name": "安川 DJ", "kana": "やすかわ", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 3900, "squareLastVisit": "2026-02-12", "squareFirstVisit": "2025-04-29", "visits": []}, {"id": 163, "name": "安本 DJ練習", "kana": "やすもと", "phone": "", "memo": "", "squareVisits": 25, "squareTotal": 54100, "squareLastVisit": "2026-02-19", "squareFirstVisit": "2025-01-16", "visits": []}, {"id": 164, "name": "ヤマザキッド Dj Yamazaki", "kana": "やまざきっど", "phone": "", "memo": "", "squareVisits": 14, "squareTotal": 37600, "squareLastVisit": "2026-02-04", "squareFirstVisit": "2025-02-27", "visits": []}, {"id": 165, "name": "山田さん", "kana": "やまださん", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 11350, "squareLastVisit": "2025-06-08", "squareFirstVisit": "2025-01-30", "visits": []}, {"id": 166, "name": "山根さん", "kana": "やまね", "phone": "", "memo": "", "squareVisits": 8, "squareTotal": 15050, "squareLastVisit": "2025-10-31", "squareFirstVisit": "2025-02-08", "visits": []}, {"id": 167, "name": "湯浅 Yuasa メガネ", "kana": "ゆあさ", "phone": "", "memo": "", "squareVisits": 15, "squareTotal": 28950, "squareLastVisit": "2026-02-14", "squareFirstVisit": "2025-01-17", "visits": []}, {"id": 168, "name": "Yu スタッフ", "kana": "ゆう", "phone": "", "memo": "", "squareVisits": 13, "squareTotal": 24350, "squareLastVisit": "2025-10-22", "squareFirstVisit": "2025-01-19", "visits": []}, {"id": 169, "name": "ゆうき", "kana": "ゆうき", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 3100, "squareLastVisit": "2025-01-17", "squareFirstVisit": "2025-01-17", "visits": []}, {"id": 170, "name": "ゆうたわっしょい JAP", "kana": "ゆうた わっしょい", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 8150, "squareLastVisit": "2025-07-23", "squareFirstVisit": "2025-06-10", "visits": []}, {"id": 171, "name": "ゆうた セカスト", "kana": "ゆうた", "phone": "", "memo": "", "squareVisits": 18, "squareTotal": 29550, "squareLastVisit": "2025-10-21", "squareFirstVisit": "2025-01-28", "visits": []}, {"id": 172, "name": "ゆうたん 田代", "kana": "ゆうたん", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 8900, "squareLastVisit": "2026-02-21", "squareFirstVisit": "2025-01-19", "visits": []}, {"id": 173, "name": "ゆうへい DJ", "kana": "ゆうへい", "phone": "", "memo": "", "squareVisits": 15, "squareTotal": 40750, "squareLastVisit": "2026-02-28", "squareFirstVisit": "2025-01-12", "visits": []}, {"id": 174, "name": "ゆっきー DJ", "kana": "ゆっきー", "phone": "", "memo": "", "squareVisits": 9, "squareTotal": 23650, "squareLastVisit": "2025-10-04", "squareFirstVisit": "2025-05-18", "visits": []}, {"id": 175, "name": "ユニ　Yuni ゆにDJ", "kana": "ゆにユニ", "phone": "", "memo": "", "squareVisits": 6, "squareTotal": 25550, "squareLastVisit": "2026-01-29", "squareFirstVisit": "2025-01-23", "visits": []}, {"id": 176, "name": "ようすけ 大阪", "kana": "ようすけ", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 11100, "squareLastVisit": "2025-02-04", "squareFirstVisit": "2025-02-04", "visits": []}, {"id": 177, "name": "ライラ君 ピアノ　ra", "kana": "らいら", "phone": "", "memo": "", "squareVisits": 18, "squareTotal": 31100, "squareLastVisit": "2026-02-18", "squareFirstVisit": "2025-04-09", "visits": []}, {"id": 178, "name": "りさ 抹茶", "kana": "りさ", "phone": "", "memo": "", "squareVisits": 16, "squareTotal": 56450, "squareLastVisit": "2026-02-12", "squareFirstVisit": "2025-01-30", "visits": []}, {"id": 179, "name": "りょう yes", "kana": "りょう", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 4400, "squareLastVisit": "2026-01-21", "squareFirstVisit": "2025-08-20", "visits": []}, {"id": 180, "name": "りんご　rings りなこ　松崎　大人の図工", "kana": "りんごびょう", "phone": "", "memo": "", "squareVisits": 8, "squareTotal": 18550, "squareLastVisit": "2026-02-28", "squareFirstVisit": "2025-01-22", "visits": []}, {"id": 181, "name": "りんたろう DJ", "kana": "りんたろう", "phone": "", "memo": "", "squareVisits": 8, "squareTotal": 11100, "squareLastVisit": "2025-12-18", "squareFirstVisit": "2025-06-27", "visits": []}, {"id": 182, "name": "るい DJ TAG", "kana": "るい たぐ", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 13100, "squareLastVisit": "2025-10-15", "squareFirstVisit": "2025-10-15", "visits": []}, {"id": 183, "name": "レイ DJ ray", "kana": "れい", "phone": "", "memo": "", "squareVisits": 8, "squareTotal": 20150, "squareLastVisit": "2026-02-26", "squareFirstVisit": "2025-01-12", "visits": []}, {"id": 184, "name": "レオ キラキラ", "kana": "れお", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 8150, "squareLastVisit": "2025-10-31", "squareFirstVisit": "2025-04-22", "visits": []}, {"id": 185, "name": "レオ スマイル", "kana": "れお", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1000, "squareLastVisit": "2025-08-31", "squareFirstVisit": "2025-08-31", "visits": []}, {"id": 186, "name": "れんたろう Rentaro dj", "kana": "れんたろう", "phone": "", "memo": "", "squareVisits": 47, "squareTotal": 65300, "squareLastVisit": "2026-02-14", "squareFirstVisit": "2025-01-15", "visits": []}, {"id": 187, "name": "あみちゃん DJ Ami", "kana": "アミ", "phone": "", "memo": "", "squareVisits": 17, "squareTotal": 34550, "squareLastVisit": "2026-02-18", "squareFirstVisit": "2025-01-22", "visits": []}, {"id": 188, "name": "あやdj Aya", "kana": "アヤ", "phone": "", "memo": "", "squareVisits": 29, "squareTotal": 60100, "squareLastVisit": "2026-02-12", "squareFirstVisit": "2025-01-25", "visits": []}, {"id": 189, "name": "えがしら Ega DJ", "kana": "エガ", "phone": "", "memo": "", "squareVisits": 43, "squareTotal": 253600, "squareLastVisit": "2026-03-06", "squareFirstVisit": "2025-01-16", "visits": []}, {"id": 190, "name": "エンゲル 寺本さん", "kana": "エンゲル テラモト", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 700, "squareLastVisit": "2025-01-29", "squareFirstVisit": "2025-01-29", "visits": []}, {"id": 191, "name": "かけるくん kkr", "kana": "カケル", "phone": "", "memo": "", "squareVisits": 20, "squareTotal": 36100, "squareLastVisit": "2026-02-19", "squareFirstVisit": "2025-01-23", "visits": []}, {"id": 192, "name": "Grabismふなさん DJ", "kana": "グラビズムフナハラ", "phone": "", "memo": "", "squareVisits": 16, "squareTotal": 38650, "squareLastVisit": "2026-02-26", "squareFirstVisit": "2025-01-29", "visits": []}, {"id": 193, "name": "さつまじ", "kana": "サツマ", "phone": "", "memo": "", "squareVisits": 11, "squareTotal": 79750, "squareLastVisit": "2025-12-27", "squareFirstVisit": "2025-01-12", "visits": []}, {"id": 194, "name": "Jungle タイチ君", "kana": "ジャングル たいち", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 900, "squareLastVisit": "2026-02-26", "squareFirstVisit": "2026-02-26", "visits": []}, {"id": 195, "name": "ジャンボさん 広島", "kana": "ジャンボ", "phone": "", "memo": "// 重複した顧客情報を2025/4/15日に結合しました。下記は最新の顧客情報には含まれていません。姓: ジャンボ", "squareVisits": 16, "squareTotal": 38050, "squareLastVisit": "2026-01-23", "squareFirstVisit": "2025-01-23", "visits": []}, {"id": 196, "name": "鈴木 Suzu dj", "kana": "スズキ", "phone": "", "memo": "", "squareVisits": 64, "squareTotal": 196150, "squareLastVisit": "2026-02-26", "squareFirstVisit": "2025-01-16", "visits": []}, {"id": 197, "name": "たいせい DJ", "kana": "タイセイ", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 700, "squareLastVisit": "2025-04-17", "squareFirstVisit": "2025-04-17", "visits": []}, {"id": 198, "name": "Taichi たいち Jungle dj練習", "kana": "タイチ", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 4300, "squareLastVisit": "2026-02-28", "squareFirstVisit": "2026-02-12", "visits": []}, {"id": 199, "name": "だいすけくん Sappy", "kana": "ダイスケ", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 1750, "squareLastVisit": "2025-06-13", "squareFirstVisit": "2025-04-09", "visits": []}, {"id": 200, "name": "ともや たんが　DJ", "kana": "トモヤ", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 4850, "squareLastVisit": "2025-03-25", "squareFirstVisit": "2025-01-22", "visits": []}, {"id": 201, "name": "ながい みゆう　ハイブ", "kana": "ナガイ みゆう", "phone": "", "memo": "", "squareVisits": 11, "squareTotal": 24650, "squareLastVisit": "2026-01-21", "squareFirstVisit": "2025-01-22", "visits": []}, {"id": 202, "name": "Dj Noboru", "kana": "ノボル のぼる", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 4550, "squareLastVisit": "2026-02-10", "squareFirstVisit": "2025-03-19", "visits": []}, {"id": 203, "name": "ヒッキー キース", "kana": "ヒッキー", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 600, "squareLastVisit": "2025-03-11", "squareFirstVisit": "2025-03-11", "visits": []}, {"id": 204, "name": "ふくださん マシンライブ", "kana": "フクダ", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 7100, "squareLastVisit": "2025-09-05", "squareFirstVisit": "2025-01-31", "visits": []}, {"id": 205, "name": "ふみ Fumi toy", "kana": "フミ", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 4900, "squareLastVisit": "2026-02-21", "squareFirstVisit": "2026-01-29", "visits": []}, {"id": 206, "name": "Bebe フランス", "kana": "ベベ", "phone": "", "memo": "", "squareVisits": 3, "squareTotal": 6900, "squareLastVisit": "2026-02-05", "squareFirstVisit": "2025-01-30", "visits": []}, {"id": 207, "name": "まさや", "kana": "マサヤ", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 9250, "squareLastVisit": "2025-11-26", "squareFirstVisit": "2025-01-25", "visits": []}, {"id": 208, "name": "みるこん", "kana": "ミルコン", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1300, "squareLastVisit": "2025-01-29", "squareFirstVisit": "2025-01-29", "visits": []}, {"id": 209, "name": "Yasuyo やすよ先生", "kana": "ヤス", "phone": "", "memo": "", "squareVisits": 5, "squareTotal": 5300, "squareLastVisit": "2026-02-26", "squareFirstVisit": "2026-01-29", "visits": []}, {"id": 210, "name": "よこ　Yoko DJ", "kana": "ヨコ", "phone": "", "memo": "", "squareVisits": 42, "squareTotal": 123150, "squareLastVisit": "2026-01-29", "squareFirstVisit": "2025-01-12", "visits": []}, {"id": 211, "name": "よしお Yoshio DJ", "kana": "ヨシオ", "phone": "", "memo": "", "squareVisits": 8, "squareTotal": 16550, "squareLastVisit": "2026-01-29", "squareFirstVisit": "2025-01-14", "visits": []}, {"id": 212, "name": "りゅう 雨雪 nui Ryu ame Rena", "kana": "リュウ レナ", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 2300, "squareLastVisit": "2026-01-29", "squareFirstVisit": "2026-01-29", "visits": []}, {"id": 213, "name": "論手 Wow", "kana": "ロンデ", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 3250, "squareLastVisit": "2026-02-12", "squareFirstVisit": "2026-02-12", "visits": []}, {"id": 214, "name": "渡壁 兵庫　ワタカベWara", "kana": "ワタカベ", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1900, "squareLastVisit": "2026-02-05", "squareFirstVisit": "2026-02-05", "visits": []}, {"id": 215, "name": "こうめい", "kana": "こうめい", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 4400, "squareLastVisit": "2025-10-15", "squareFirstVisit": "2025-03-19", "visits": []}, {"id": 216, "name": "波多野なお", "kana": "なお", "phone": "", "memo": "", "squareVisits": 4, "squareTotal": 10900, "squareLastVisit": "2025-10-01", "squareFirstVisit": "2025-03-19", "visits": []}, {"id": 217, "name": "Madflava ヒロ", "kana": "ひろ", "phone": "", "memo": "", "squareVisits": 16, "squareTotal": 52100, "squareLastVisit": "2025-10-05", "squareFirstVisit": "2025-01-12", "visits": []}, {"id": 218, "name": "Dj Sophje ソフィー", "kana": "", "phone": "", "memo": "", "squareVisits": 0, "squareTotal": 0, "squareLastVisit": "", "squareFirstVisit": "", "visits": []}, {"id": 219, "name": "Momoko 桃子　シンガー　jazz", "kana": "", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 2200, "squareLastVisit": "2026-02-14", "squareFirstVisit": "2026-02-14", "visits": []}, {"id": 220, "name": "あいこさん カポエラ", "kana": "", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1600, "squareLastVisit": "2025-03-05", "squareFirstVisit": "2025-03-05", "visits": []}, {"id": 221, "name": "あいの Yes", "kana": "", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1200, "squareLastVisit": "2026-02-27", "squareFirstVisit": "2026-02-27", "visits": []}, {"id": 222, "name": "あまね 親　Amane", "kana": "", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 5200, "squareLastVisit": "2026-02-14", "squareFirstVisit": "2026-02-14", "visits": []}, {"id": 223, "name": "あんげん　Angen 目の不自由な方", "kana": "", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 6500, "squareLastVisit": "2026-02-14", "squareFirstVisit": "2026-02-14", "visits": []}, {"id": 224, "name": "さとちん", "kana": "", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 4650, "squareLastVisit": "2025-12-26", "squareFirstVisit": "2025-12-26", "visits": []}, {"id": 225, "name": "そうた Yuta 友 So", "kana": "", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 3400, "squareLastVisit": "2026-02-17", "squareFirstVisit": "2026-02-17", "visits": []}, {"id": 226, "name": "はたあな", "kana": "", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1900, "squareLastVisit": "2025-11-21", "squareFirstVisit": "2025-11-21", "visits": []}, {"id": 227, "name": "まえじま ドラム", "kana": "", "phone": "", "memo": "", "squareVisits": 2, "squareTotal": 2950, "squareLastVisit": "2025-02-26", "squareFirstVisit": "2025-02-15", "visits": []}, {"id": 228, "name": "ガーシィ Gays", "kana": "", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 2500, "squareLastVisit": "2026-02-14", "squareFirstVisit": "2026-02-14", "visits": []}, {"id": 229, "name": "蔵人 Kurando", "kana": "", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 7800, "squareLastVisit": "2025-12-11", "squareFirstVisit": "2025-12-11", "visits": []}, {"id": 230, "name": "Eriveri", "kana": "", "phone": "", "memo": "", "squareVisits": 1, "squareTotal": 1000, "squareLastVisit": "2025-10-10", "squareFirstVisit": "2025-10-10", "visits": []}];
+
+// ===== STATE =====
+let items = loadItems();
+let sales = loadSales();
+let customers = loadCustomers();
+let djs = loadDJs();
+
+const DB_DJS = 'mhz_djs';
+const DB_PIN = 'mhz_pin';
+const DEFAULT_PIN = '1234';
+
+function loadDJs() {
+  try { return JSON.parse(localStorage.getItem('mhz_djs')) || []; }
+  catch { return []; }
+}
+function saveDJs() { localStorage.setItem('mhz_djs', JSON.stringify(djs)); }
+function getPin() { return localStorage.getItem(DB_PIN) || DEFAULT_PIN; }
+function setPin(p) { localStorage.setItem(DB_PIN, p); }
+let currentCategory = 'すべて';
+let viewingMonth = new Date();
+let editingDate = null;
+
+// ===== TICKET STATE =====
+const DB_TICKETS = 'mhz_tickets';
+let tickets = loadTickets(); // [{id, name, cart: {key:{itemId,name,price,qty}}}]
+let activeTicketId = null;
+
+function loadTickets() {
+  try { return JSON.parse(localStorage.getItem(DB_TICKETS)) || []; }
+  catch { return []; }
+}
+function saveTickets() {
+  localStorage.setItem(DB_TICKETS, JSON.stringify(tickets));
+}
+function getActiveTicket() {
+  return tickets.find(t => t.id === activeTicketId) || null;
+}
+function getActiveCart() {
+  const t = getActiveTicket();
+  return t ? t.cart : {};
+}
+function setActiveCart(cart) {
+  const t = getActiveTicket();
+  if (t) t.cart = cart;
+}
+
+// Shim: keep legacy 'cart' references working via active ticket
+function getCart() { return getActiveCart(); }
+
+// ===== INIT =====
+// Global error catcher
+window.onerror = function(msg, src, line, col, err) {
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:20px;z-index:9999;font-size:14px;font-family:monospace;white-space:pre-wrap;';
+  d.textContent = 'JS ERROR:\n' + msg + '\nLine: ' + line + '\n' + (err ? err.stack : '');
+  document.body.appendChild(d);
+  return false;
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    updateHeaderDate();
+    if (tickets.length === 0) {
+      tickets.push({ id: Date.now(), name: '伝票1', cart: {} });
+      saveTickets();
+    }
+    activeTicketId = tickets[0].id;
+    renderTicketBar();
+    renderRegister();
+    renderSales();
+    renderSettings();
+    renderDJList();
+  } catch(e) {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#111;color:#f66;padding:20px;z-index:9999;font-size:13px;font-family:monospace;white-space:pre-wrap;overflow:auto;';
+    d.textContent = 'INIT ERROR:\n' + e.message + '\n\n' + e.stack;
+    document.body.appendChild(d);
+  }
+});
+
+function updateHeaderDate() {
+  const now = new Date();
+  const days = ['日','月','火','水','木','金','土'];
+  document.getElementById('header-date').textContent =
+    `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} (${days[now.getDay()]})`;
+}
+
+// ===== VIEW SWITCHING =====
+function showView(v) {
+  document.getElementById('view-register').style.display = v==='register' ? 'flex' : 'none';
+  document.getElementById('view-sales').classList.toggle('active', v==='sales');
+  document.getElementById('view-settings').classList.toggle('active', v==='settings');
+  document.getElementById('view-customers').classList.toggle('active', v==='customers');
+  document.getElementById('view-analytics').classList.toggle('active', v==='analytics');
+  document.querySelectorAll('.nav-tab').forEach((btn, i) => {
+    btn.classList.toggle('active', ['register','sales','settings','customers','analytics'][i] === v);
+  });
+  if (v === 'sales') renderSales();
+  if (v === 'settings') renderSettings();
+  if (v === 'customers') renderCustomerList();
+  if (v === 'analytics') openAnalytics();
+}
+
+// ===== REGISTER =====
+function renderRegister() {
+  const catOrder = ['アルコール','限定アルコール','ノンアルコール','限定ノンアルコール','スイーツ','限定スイーツ','フード','限定フード','チャージ','その他'];
+  const existingCats = new Set(items.map(i => i.category));
+  const cats = ['すべて', ...catOrder.filter(c => existingCats.has(c)), ...[...existingCats].filter(c => !catOrder.includes(c))];
+  const catBar = document.getElementById('category-bar');
+  catBar.innerHTML = cats.map(c =>
+    `<button class="cat-btn ${c===currentCategory?'active':''}" onclick="selectCat('${c}')">${c}</button>`
+  ).join('');
+
+  const filtered = currentCategory === 'すべて' ? items : items.filter(i => i.category === currentCategory);
+  const grid = document.getElementById('item-grid');
+  grid.classList.toggle('edit-mode', editMode);
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="empty-state">商品がありません</div>';
+    return;
+  }
+  grid.innerHTML = filtered.map(item => {
+    const hasVar = item.variants && item.variants.length > 0;
+    const priceLabel = hasVar ? `¥${item.variants.map(v=>v.price).sort((a,b)=>a-b)[0].toLocaleString()}〜` : `¥${item.price.toLocaleString()}`;
+    if (editMode) {
+      return `<button class="item-btn${hasVar?' has-variants':''}" data-id="${item.id}"
+        draggable="true"
+        ontouchstart="regTouchStart(event,${item.id})"
+        ontouchmove="regTouchMove(event)"
+        ontouchend="regTouchEnd(event)"
+        ondragstart="regDragStart(event,${item.id})"
+        ondragover="regDragOver(event)"
+        ondrop="regDrop(event,${item.id})"
+        ondragend="regDragEnd()">
+        <span class="item-name">${item.name}</span>
+        <span class="item-price">${priceLabel}</span>
+      </button>`;
+    } else {
+      return `<button class="item-btn${hasVar?' has-variants':''}" data-id="${item.id}" onclick="${hasVar ? `openVariantModal(${item.id})` : `addToCart(${item.id},null,null)`}">
+        <span class="item-name">${item.name}</span>
+        <span class="item-price">${priceLabel}</span>
+      </button>`;
+    }
+  }).join('');
+}
+
+function selectCat(cat) {
+  currentCategory = cat;
+  renderRegister();
+}
+
+// ===== VARIANT MODAL =====
+function openVariantModal(itemId) {
+  const item = items.find(i => i.id === itemId);
+  if (!item) return;
+  document.getElementById('variant-modal-title').textContent = item.name;
+  document.getElementById('variant-grid').innerHTML = item.variants.map((v, idx) =>
+    `<button class="variant-btn" onclick="addToCart(${itemId},'${v.name.replace(/'/g,"\\'")}',${v.price});closeVariantModal()">
+      <span class="variant-btn-name">${v.name}</span>
+      <span class="variant-btn-price">¥${v.price.toLocaleString()}</span>
+    </button>`
+  ).join('');
+  document.getElementById('variant-modal').classList.add('open');
+}
+
+function closeVariantModal() {
+  document.getElementById('variant-modal').classList.remove('open');
+}
+
+function addToCart(id, variantName, variantPrice) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  // Use composite key for variants: "id:variantName"
+  const key = variantName ? `${id}:${variantName}` : `${id}`;
+  const cart = getActiveCart();
+  if (!cart[key]) {
+    cart[key] = {
+      itemId: id,
+      name: variantName ? `${item.name} ${variantName}` : item.name,
+      price: variantPrice !== null ? variantPrice : item.price,
+      qty: 0
+    };
+  }
+  cart[key].qty += 1;
+  setActiveCart(cart);
+  saveTickets();
+  renderCart();
+  renderTicketBar();
+}
+
+function changeQty(key, delta) {
+  const cart = getActiveCart();
+  if (!cart[key]) return;
+  cart[key].qty += delta;
+  if (cart[key].qty <= 0) delete cart[key];
+  setActiveCart(cart);
+  saveTickets();
+  renderCart();
+  renderTicketBar();
+}
+
+function clearCart() {
+  setActiveCart({});
+  saveTickets();
+  renderCart();
+  renderTicketBar();
+}
+
+function renderCart() {
+  const cart = getActiveCart();
+  const keys = Object.keys(cart);
+  const cartItemsEl = document.getElementById('cart-items');
+
+  if (keys.length === 0) {
+    cartItemsEl.innerHTML = '<div class="empty-state" id="cart-empty">商品を選択してください</div>';
+    document.getElementById('total-display').textContent = '¥0';
+    document.getElementById('charge-btn').disabled = true;
+    return;
+  }
+
+  let total = 0;
+  cartItemsEl.innerHTML = keys.map(key => {
+    const entry = cart[key];
+    const sub = entry.price * entry.qty;
+    total += sub;
+    const escapedKey = key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="cart-item">
+      <span class="cart-item-name">${entry.name}</span>
+      <div class="cart-qty-ctrl">
+        <button class="qty-btn" onclick="changeQty('${escapedKey}',-1)">−</button>
+        <span class="qty-num">${entry.qty}</span>
+        <button class="qty-btn" onclick="changeQty('${escapedKey}',1)">＋</button>
+      </div>
+      <span class="cart-item-subtotal">¥${sub.toLocaleString()}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('total-display').textContent = `¥${total.toLocaleString()}`;
+  document.getElementById('charge-btn').disabled = false;
+}
+
+function getCartTotal() {
+  return Object.values(getActiveCart()).reduce((sum, entry) => sum + entry.price * entry.qty, 0);
+}
+
+// ===== CHARGE MODAL =====
+function openChargeModal() {
+  const total = getCartTotal();
+  // Pre-fill customer from ticket name
+  const ticket = getActiveTicket();
+  const custInput = document.getElementById('charge-cust-input');
+  if (custInput) {
+    custInput.value = ticket ? ticket.name.replace(/^伝票\d+$/, '') : '';
+    document.getElementById('charge-cust-selected').textContent = '';
+    document.getElementById('charge-cust-dropdown').classList.remove('open');
+  }
+  // Reset payment to cash
+  selectedPayment = 'cash';
+  ['cash','card','qr'].forEach(m => {
+    const btn = document.getElementById('pay-'+m);
+    if (btn) btn.classList.toggle('active', m === 'cash');
+  });
+  const gEl = document.getElementById('charge-guests');
+  if (gEl) gEl.value = '';
+  const djEl = document.getElementById('charge-dj-input');
+  if (djEl) { djEl.value = ''; }
+  const djDd = document.getElementById('charge-dj-dropdown');
+  if (djDd) djDd.classList.remove('open');
+
+  const lines = Object.values(getActiveCart()).map(entry =>
+    `<div class="modal-item-line"><span>${entry.name} × ${entry.qty}</span><span>¥${(entry.price*entry.qty).toLocaleString()}</span></div>`
+  ).join('');
+  document.getElementById('modal-items').innerHTML = lines;
+  document.getElementById('modal-total').textContent = `¥${total.toLocaleString()}`;
+  document.getElementById('charge-modal').classList.add('open');
+}
+
+function closeChargeModal() {
+  document.getElementById('charge-modal').classList.remove('open');
+}
+
+let selectedPayment = 'cash'; // 'cash' | 'card' | 'qr'
+
+function selectPayment(method) {
+  selectedPayment = method;
+  ['cash','card','qr'].forEach(m => {
+    document.getElementById('pay-'+m).classList.toggle('active', m === method);
+  });
+}
+
+function confirmCharge() {
+  const total = getCartTotal();
+  const today = toDateKey(new Date());
+  const now = new Date();
+  const payMethod = selectedPayment;
+
+  // Save to daily sales with payment breakdown
+  const guestsInput = document.getElementById('charge-guests');
+  const djInput = document.getElementById('charge-dj-input');
+  const guestCount = parseInt(guestsInput ? guestsInput.value : '0', 10) || 0;
+  const djName = djInput ? djInput.value.trim() : '';
+
+  if (!sales[today]) sales[today] = { amount: 0, memo: '', cash: 0, card: 0, qr: 0, guests: 0, transactions: [] };
+  sales[today].amount += total;
+  sales[today].cash = (sales[today].cash || 0) + (payMethod === 'cash' ? total : 0);
+  sales[today].card = (sales[today].card || 0) + (payMethod === 'card' ? total : 0);
+  sales[today].qr   = (sales[today].qr   || 0) + (payMethod === 'qr'   ? total : 0);
+  sales[today].guests = (sales[today].guests || 0) + guestCount;
+  if (!sales[today].transactions) sales[today].transactions = [];
+  sales[today].transactions.push({
+    time: now.toISOString(),
+    total,
+    payMethod,
+    guests: guestCount,
+    dj: djName,
+    items: Object.values(getActiveCart()).map(e => ({name: e.name, qty: e.qty, price: e.price}))
+  });
+  if (djName && !djs.includes(djName)) {
+    djs.push(djName);
+    saveDJs();
+  }
+  saveSales(sales);
+
+  // Save to customer history if linked
+  const custInput = document.getElementById('charge-cust-input');
+  const custName = custInput ? custInput.value.trim() : '';
+  if (custName) {
+    let cust = customers.find(c => c.name === custName || c.kana === custName);
+    if (!cust) {
+      // Auto-create customer if not found
+      cust = { id: Date.now(), name: custName, kana: '', phone: '', memo: '', visits: [] };
+      customers.push(cust);
+    }
+    const cartSnapshot = Object.values(getActiveCart()).map(e => ({name: e.name, qty: e.qty, price: e.price}));
+    cust.visits = cust.visits || [];
+    cust.visits.unshift({
+      date: now.toISOString(),
+      items: cartSnapshot,
+      total
+    });
+    saveCustomers();
+  }
+
+  closeChargeModal();
+
+  // Remove the paid ticket and switch to another
+  const idx = tickets.findIndex(t => t.id === activeTicketId);
+  tickets.splice(idx, 1);
+  if (tickets.length === 0) {
+    tickets.push({ id: Date.now(), name: '伝票1', cart: {} });
+  }
+  activeTicketId = tickets[Math.max(0, idx - 1)].id;
+  saveTickets();
+  renderTicketBar();
+  renderCart();
+  showToast(`¥${total.toLocaleString()} を記録しました`);
+}
+
+// ===== SALES VIEW =====
+function toDateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function changeMonth(delta) {
+  viewingMonth = new Date(viewingMonth.getFullYear(), viewingMonth.getMonth() + delta, 1);
+  renderSales();
+}
+
+function renderSales() {
+  const y = viewingMonth.getFullYear();
+  const m = viewingMonth.getMonth();
+  document.getElementById('month-label').textContent = `${y}年 ${m+1}月`;
+
+  // Collect days with sales in this month
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  let total = 0, openDays = 0, maxDay = 0, maxSales = 0;
+
+  const entries = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const rec = sales[key];
+    if (rec && rec.amount > 0) {
+      total += rec.amount;
+      openDays++;
+      if (rec.amount > maxSales) { maxSales = rec.amount; maxDay = d; }
+      entries.push({ d, key, amount: rec.amount, memo: rec.memo || '',
+        cash: rec.cash || 0, card: rec.card || 0, qr: rec.qr || 0 });
+    }
+  }
+
+  // Summary cards
+  const avg = openDays > 0 ? Math.round(total / openDays) : 0;
+  document.getElementById('month-summary').innerHTML = `
+    <div class="summary-card">
+      <div class="summary-card-label">月次売上</div>
+      <div class="summary-card-value">¥${total.toLocaleString()}</div>
+      <div class="summary-card-sub">${openDays}日営業</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-label">日平均</div>
+      <div class="summary-card-value">¥${avg.toLocaleString()}</div>
+      <div class="summary-card-sub">営業日ベース</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-label">最高売上日</div>
+      <div class="summary-card-value">${maxDay > 0 ? maxDay+'日' : '—'}</div>
+      <div class="summary-card-sub">${maxSales > 0 ? '¥'+maxSales.toLocaleString() : ''}</div>
+    </div>
+  `;
+
+  // Today's breakdown bar (current month only)
+  const days = ['日','月','火','水','木','金','土'];
+  const todayKey = toDateKey(new Date());
+  const now = new Date();
+  const isCurrentMonth = y === now.getFullYear() && m === now.getMonth();
+
+  const salesContent = document.getElementById('sales-content') || document.getElementById('daily-list').parentElement;
+  let todayBarEl = document.getElementById('today-summary-bar');
+
+  if (isCurrentMonth) {
+    const todayRec = sales[todayKey] || {};
+    const todayTotal = todayRec.amount || 0;
+    const todayCash = todayRec.cash || 0;
+    const todayCard = todayRec.card || 0;
+    const todayQr   = todayRec.qr   || 0;
+    const barHtml = `<div class="today-summary" id="today-summary-bar">
+      <div class="today-summary-title">TODAY</div>
+      <div class="today-summary-total">¥${todayTotal.toLocaleString()}</div>
+      <div class="today-summary-breakdown">
+        <div class="today-bd-item cash">
+          <div class="today-bd-label">💴 現金</div>
+          <div class="today-bd-value">¥${todayCash.toLocaleString()}</div>
+        </div>
+        <div class="today-bd-item card">
+          <div class="today-bd-label">💳 カード</div>
+          <div class="today-bd-value">¥${todayCard.toLocaleString()}</div>
+        </div>
+        <div class="today-bd-item qr">
+          <div class="today-bd-label">📱 QR</div>
+          <div class="today-bd-value">¥${todayQr.toLocaleString()}</div>
+        </div>
+      </div>
+    </div>`;
+    document.getElementById('month-summary').insertAdjacentHTML('afterend', todayBarEl ? '' : barHtml);
+    if (todayBarEl) todayBarEl.outerHTML = barHtml;
+  } else {
+    if (todayBarEl) todayBarEl.remove();
+  }
+
+  // Show entries in reverse order
+  const sorted = [...entries].reverse();
+
+  if (sorted.length === 0) {
+    document.getElementById('daily-list').innerHTML =
+      `<div class="no-sales-row">この月の売上データはありません</div>`;
+  } else {
+    document.getElementById('daily-list').innerHTML = sorted.map(e => {
+      const dt = new Date(y, m, e.d);
+      const dayName = days[dt.getDay()];
+      const isToday = e.key === todayKey;
+      const chips = [
+        e.cash > 0 ? `<span class="day-breakdown-chip cash">💴¥${e.cash.toLocaleString()}</span>` : '',
+        e.card > 0 ? `<span class="day-breakdown-chip card">💳¥${e.card.toLocaleString()}</span>` : '',
+        e.qr   > 0 ? `<span class="day-breakdown-chip qr">📱¥${e.qr.toLocaleString()}</span>`   : '',
+      ].filter(Boolean).join('');
+      return `<div class="day-row ${isToday?'today':''}">
+        <div class="day-date">${m+1}/${e.d} (${dayName})</div>
+        <div class="day-amount">¥${e.amount.toLocaleString()}</div>
+        ${chips ? `<div class="day-breakdown">${chips}</div>` : ''}
+        <div class="day-memo">${e.memo}</div>
+        <button class="day-edit-btn" onclick="openEditSale('${e.key}')">編集</button>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ===== SALE MODAL =====
+function openAddSaleModal() {
+  editingDate = null;
+  document.getElementById('sale-date').value = toDateKey(new Date());
+  document.getElementById('sale-amount').value = '';
+  document.getElementById('sale-memo').value = '';
+  document.getElementById('sale-modal').classList.add('open');
+}
+
+function openEditSale(key) {
+  editingDate = key;
+  const rec = sales[key] || { amount: 0, memo: '' };
+  document.getElementById('sale-date').value = key;
+  document.getElementById('sale-amount').value = rec.amount || '';
+  document.getElementById('sale-memo').value = rec.memo || '';
+  document.getElementById('sale-modal').classList.add('open');
+}
+
+function closeSaleModal() {
+  document.getElementById('sale-modal').classList.remove('open');
+}
+
+function saveSaleEntry() {
+  const dateVal = document.getElementById('sale-date').value;
+  const amountVal = parseInt(document.getElementById('sale-amount').value, 10);
+  const memoVal = document.getElementById('sale-memo').value.trim();
+
+  if (!dateVal || isNaN(amountVal) || amountVal < 0) {
+    showToast('日付と金額を入力してください');
+    return;
+  }
+
+  sales[dateVal] = { amount: amountVal, memo: memoVal };
+  saveSales(sales);
+  closeSaleModal();
+  renderSales();
+  showToast('売上を保存しました');
+}
+
+// ===== SETTINGS =====
+function renderSettings() {
+  renderDJList();
+  renderSortSection();
+  const list = document.getElementById('item-list');
+  if (items.length === 0) {
+    list.innerHTML = '<div class="empty-state">商品がありません</div>';
+    return;
+  }
+  list.innerHTML = items.map(item =>
+    `<div class="item-row">
+      <span class="item-row-name">${item.name}</span>
+      <span class="item-row-cat">${item.category}</span>
+      <span class="item-row-price">¥${item.price.toLocaleString()}</span>
+      <button class="edit-btn" onclick="openItemEditModal(${item.id})">編集</button>
+      <button class="del-btn" onclick="deleteItem(${item.id})">削除</button>
+    </div>`
+  ).join('');
+}
+
+function addItem() {
+  const name = document.getElementById('new-name').value.trim();
+  const cat = document.getElementById('new-cat').value.trim() || 'その他';
+  const price = parseInt(document.getElementById('new-price').value, 10);
+
+  if (!name || isNaN(price) || price < 0) {
+    showToast('名前と価格を入力してください');
+    return;
+  }
+
+  const newId = items.length > 0 ? Math.max(...items.map(i=>i.id)) + 1 : 1;
+  items.push({ id: newId, name, category: cat, price });
+  saveItems(items);
+
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-cat').value = '';
+  document.getElementById('new-price').value = '';
+
+  renderSettings();
+  renderRegister();
+  showToast(`${name} を追加しました`);
+}
+
+function deleteItem(id) {
+  items = items.filter(i => i.id !== id);
+  saveItems(items);
+  if (cart[id]) { delete cart[id]; renderCart(); }
+  renderSettings();
+  renderRegister();
+}
+
+
+
+
+// ===== TICKET SYSTEM =====
+function renderTicketBar() {
+  const tabsEl = document.getElementById('ticket-tabs');
+  const ticket = getActiveTicket();
+  const label = ticket ? ticket.name : 'ORDER';
+  document.getElementById('cart-header-label').textContent = label;
+
+  tabsEl.innerHTML = tickets.map(t => {
+    const total = Object.values(t.cart).reduce((s, e) => s + e.price * e.qty, 0);
+    const isActive = t.id === activeTicketId;
+    return `<div class="ticket-tab ${isActive ? 'active' : ''}" onclick="switchTicket(${t.id})">
+      <span>${t.name}</span>
+      ${total > 0 ? `<span class="ticket-tab-total">¥${total.toLocaleString()}</span>` : ''}
+      <span class="ticket-tab-close" onclick="event.stopPropagation();deleteTicket(${t.id})">×</span>
+    </div>`;
+  }).join('');
+}
+
+function switchTicket(id) {
+  activeTicketId = id;
+  renderTicketBar();
+  renderCart();
+}
+
+function deleteTicket(id) {
+  if (tickets.length === 1) {
+    // Clear the only ticket instead of deleting
+    setActiveCart({});
+    saveTickets();
+    renderTicketBar();
+    renderCart();
+    return;
+  }
+  const idx = tickets.findIndex(t => t.id === id);
+  tickets.splice(idx, 1);
+  if (activeTicketId === id) {
+    activeTicketId = tickets[Math.max(0, idx - 1)].id;
+  }
+  saveTickets();
+  renderTicketBar();
+  renderCart();
+}
+
+function openNewTicketModal() {
+  document.getElementById('ticket-name-input').value = '';
+  document.getElementById('ticket-cust-input').value = '';
+  document.getElementById('ticket-cust-selected').textContent = '';
+  document.getElementById('ticket-cust-dropdown').classList.remove('open');
+  document.getElementById('ticket-modal').classList.add('open');
+  setTimeout(() => document.getElementById('ticket-cust-input').focus(), 100);
+}
+
+function closeNewTicketModal() {
+  document.getElementById('ticket-modal').classList.remove('open');
+}
+
+function createTicket() {
+  const custName = document.getElementById('ticket-cust-input').value.trim();
+  const manualName = document.getElementById('ticket-name-input').value.trim();
+  const name = custName || manualName || `伝票${tickets.length + 1}`;
+  const newTicket = { id: Date.now(), name, cart: {} };
+  tickets.push(newTicket);
+  activeTicketId = newTicket.id;
+  saveTickets();
+  closeNewTicketModal();
+  renderTicketBar();
+  renderCart();
+}
+
+// ===== REGISTER EDIT MODE =====
+let editMode = false;
+let regDragSrcId = null;
+
+function toggleEditMode() {
+  editMode = !editMode;
+  const btn = document.getElementById('edit-sort-btn');
+  btn.textContent = editMode ? '完了' : '並び替え';
+  btn.classList.toggle('active', editMode);
+  renderRegister();
+}
+
+function regDragStart(e, id) {
+  regDragSrcId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => {
+    const el = document.querySelector(`.item-btn[data-id="${id}"]`);
+    if (el) el.classList.add('dragging');
+  }, 0);
+}
+function regDragOver(e) {
+  e.preventDefault();
+  document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('drag-over'));
+  const t = e.currentTarget;
+  if (t && t.dataset.id != regDragSrcId) t.classList.add('drag-over');
+}
+function regDrop(e, targetId) {
+  e.preventDefault();
+  if (!regDragSrcId || regDragSrcId == targetId) return;
+  regReorder(regDragSrcId, targetId);
+}
+function regDragEnd() {
+  document.querySelectorAll('.item-btn').forEach(b => {
+    b.classList.remove('dragging');
+    b.classList.remove('drag-over');
+  });
+  regDragSrcId = null;
+}
+
+// Touch for register
+let regTouchId = null;
+let regTouchClone = null;
+let regTouchStartY = 0;
+let regTouchStartX = 0;
+
+function regTouchStart(e, id) {
+  regTouchId = id;
+  const el = e.currentTarget;
+  const rect = el.getBoundingClientRect();
+  regTouchStartY = e.touches[0].clientY;
+  regTouchStartX = e.touches[0].clientX;
+  el.classList.add('dragging');
+  regTouchClone = el.cloneNode(true);
+  regTouchClone.style.cssText = `
+    position:fixed; left:${rect.left}px; top:${rect.top}px;
+    width:${rect.width}px; height:${rect.height}px;
+    z-index:999; opacity:0.85; pointer-events:none;
+    background:var(--surface2); border:1px solid var(--amber);
+    border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.5);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  `;
+  document.body.appendChild(regTouchClone);
+}
+function regTouchMove(e) {
+  e.preventDefault();
+  if (!regTouchClone) return;
+  const dx = e.touches[0].clientX - regTouchStartX;
+  const dy = e.touches[0].clientY - regTouchStartY;
+  const origEl = document.querySelector(`.item-btn[data-id="${regTouchId}"]`);
+  if (!origEl) return;
+  const rect = origEl.getBoundingClientRect();
+  regTouchClone.style.left = (rect.left + dx) + 'px';
+  regTouchClone.style.top  = (rect.top  + dy) + 'px';
+  document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('drag-over'));
+  const els = document.elementsFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+  const t = els.find(el => el.classList.contains('item-btn') && el.dataset.id != regTouchId);
+  if (t) t.classList.add('drag-over');
+}
+function regTouchEnd(e) {
+  if (regTouchClone) { regTouchClone.remove(); regTouchClone = null; }
+  document.querySelectorAll('.item-btn').forEach(b => {
+    b.classList.remove('dragging'); b.classList.remove('drag-over');
+  });
+  const touch = e.changedTouches[0];
+  const els = document.elementsFromPoint(touch.clientX, touch.clientY);
+  const t = els.find(el => el.classList.contains('item-btn') && el.dataset.id != regTouchId);
+  if (t && regTouchId) regReorder(regTouchId, parseInt(t.dataset.id));
+  regTouchId = null;
+}
+
+function regReorder(srcId, targetId) {
+  srcId = parseInt(srcId); targetId = parseInt(targetId);
+  const si = items.findIndex(i => i.id === srcId);
+  const ti = items.findIndex(i => i.id === targetId);
+  if (si === -1 || ti === -1) return;
+  const [moved] = items.splice(si, 1);
+  items.splice(ti, 0, moved);
+  saveItems(items);
+  renderRegister();
+  // sync sort section if open
+  const sortList = document.getElementById('sort-list');
+  if (sortList) renderSortList();
+}
+
+// ===== SORT (DRAG & DROP) =====
+let sortCategory = null;
+let dragSrcIndex = null;
+
+function renderSortSection() {
+  const catOrder = ['アルコール','限定アルコール','ノンアルコール','限定ノンアルコール','スイーツ','限定スイーツ','フード','限定フード','チャージ','その他'];
+  const existingCats = [...new Set(items.map(i => i.category))];
+  const orderedCats = [...catOrder.filter(c => existingCats.includes(c)), ...existingCats.filter(c => !catOrder.includes(c))];
+
+  if (!sortCategory || !existingCats.includes(sortCategory)) {
+    sortCategory = orderedCats[0];
+  }
+
+  // Category tabs
+  document.getElementById('sort-cat-tabs').innerHTML = orderedCats.map(c =>
+    `<button class="sort-cat-btn ${c === sortCategory ? 'active' : ''}" onclick="selectSortCat('${c}')">${c}</button>`
+  ).join('');
+
+  renderSortList();
+}
+
+function selectSortCat(cat) {
+  sortCategory = cat;
+  renderSortSection();
+}
+
+function renderSortList() {
+  const filtered = items.filter(i => i.category === sortCategory);
+  const list = document.getElementById('sort-list');
+
+  list.innerHTML = filtered.map((item, idx) => {
+    const varLabel = item.variants ? `▾${item.variants.length}` : '';
+    return `<div class="sort-row" 
+      data-id="${item.id}"
+      draggable="true"
+      ontouchstart="touchStart(event, ${item.id})"
+      ontouchmove="touchMove(event)"
+      ontouchend="touchEnd(event)"
+      ondragstart="dragStart(event, ${item.id})"
+      ondragover="dragOver(event)"
+      ondrop="drop(event, ${item.id})"
+      ondragend="dragEnd(event)">
+      <span class="sort-handle">⠿</span>
+      <span class="sort-row-name">${item.name}</span>
+      ${varLabel ? `<span class="sort-row-var">${varLabel}</span>` : ''}
+      <span class="sort-row-price">¥${item.price.toLocaleString()}</span>
+    </div>`;
+  }).join('');
+}
+
+// Desktop drag
+function dragStart(e, id) {
+  dragSrcIndex = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => {
+    const el = document.querySelector(`.sort-row[data-id="${id}"]`);
+    if (el) el.classList.add('dragging');
+  }, 0);
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.sort-row').forEach(r => r.classList.remove('drag-over'));
+  const target = e.currentTarget;
+  if (target && target.dataset.id != dragSrcIndex) {
+    target.classList.add('drag-over');
+  }
+}
+
+function drop(e, targetId) {
+  e.preventDefault();
+  if (dragSrcIndex === null || dragSrcIndex == targetId) return;
+  reorderItems(dragSrcIndex, targetId);
+}
+
+function dragEnd(e) {
+  document.querySelectorAll('.sort-row').forEach(r => {
+    r.classList.remove('dragging');
+    r.classList.remove('drag-over');
+  });
+  dragSrcIndex = null;
+}
+
+// Touch drag
+let touchDragId = null;
+let touchClone = null;
+let touchStartY = 0;
+
+function touchStart(e, id) {
+  touchDragId = id;
+  touchStartY = e.touches[0].clientY;
+  const el = e.currentTarget;
+  el.classList.add('dragging');
+
+  // Create visual clone
+  touchClone = el.cloneNode(true);
+  touchClone.style.cssText = `
+    position: fixed;
+    left: ${el.getBoundingClientRect().left}px;
+    top: ${el.getBoundingClientRect().top}px;
+    width: ${el.offsetWidth}px;
+    z-index: 999;
+    opacity: 0.85;
+    pointer-events: none;
+    background: var(--surface2);
+    border: 1px solid var(--amber);
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  `;
+  document.body.appendChild(touchClone);
+}
+
+function touchMove(e) {
+  e.preventDefault();
+  if (!touchClone) return;
+  const dy = e.touches[0].clientY - touchStartY;
+  const origEl = document.querySelector(`.sort-row[data-id="${touchDragId}"]`);
+  if (!origEl) return;
+  const origTop = origEl.getBoundingClientRect().top;
+  touchClone.style.top = (origTop + dy) + 'px';
+
+  // Highlight target
+  document.querySelectorAll('.sort-row').forEach(r => r.classList.remove('drag-over'));
+  const touch = e.touches[0];
+  const els = document.elementsFromPoint(touch.clientX, touch.clientY);
+  const target = els.find(el => el.classList.contains('sort-row') && el.dataset.id != touchDragId);
+  if (target) target.classList.add('drag-over');
+}
+
+function touchEnd(e) {
+  if (touchClone) { touchClone.remove(); touchClone = null; }
+  document.querySelectorAll('.sort-row').forEach(r => {
+    r.classList.remove('dragging');
+    r.classList.remove('drag-over');
+  });
+
+  const touch = e.changedTouches[0];
+  const els = document.elementsFromPoint(touch.clientX, touch.clientY);
+  const target = els.find(el => el.classList.contains('sort-row') && el.dataset.id != touchDragId);
+  if (target && touchDragId) {
+    reorderItems(touchDragId, parseInt(target.dataset.id));
+  }
+  touchDragId = null;
+}
+
+function reorderItems(srcId, targetId) {
+  srcId = parseInt(srcId);
+  targetId = parseInt(targetId);
+  const srcIdx = items.findIndex(i => i.id === srcId);
+  const tgtIdx = items.findIndex(i => i.id === targetId);
+  if (srcIdx === -1 || tgtIdx === -1) return;
+
+  const [moved] = items.splice(srcIdx, 1);
+  items.splice(tgtIdx, 0, moved);
+  saveItems(items);
+  renderSortList();
+  renderRegister();
+}
+
+
+// ===== CUSTOMER SYSTEM =====
+let selectedCustomerId = null;
+
+function renderCustomerList() {
+  const q = (document.getElementById('cust-search')?.value || '').trim().toLowerCase();
+  const filtered = q
+    ? customers.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        (c.kana || '').toLowerCase().includes(q) ||
+        (c.phone || '').includes(q))
+    : [...customers].sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+
+  const el = document.getElementById('cust-list');
+  if (!el) return;
+
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="empty-state">顧客が見つかりません</div>';
+    return;
+  }
+
+  el.innerHTML = filtered.map(c => {
+    const visits = c.visits || [];
+    const mhzAmt = visits.reduce((s, v) => s + v.total, 0);
+    const combinedVisits = visits.length + (c.squareVisits || 0);
+    const combinedTotal = mhzAmt + (c.squareTotal || 0);
+    return `<div class="cust-row ${c.id === selectedCustomerId ? 'active' : ''}" onclick="selectCustomer(${c.id})">
+      <div class="cust-row-name">${c.name}</div>
+      <div class="cust-row-sub">
+        ${c.kana ? c.kana + ' ／ ' : ''}
+        <span class="cust-row-badge">${combinedVisits}回 ¥${combinedTotal.toLocaleString()}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectCustomer(id) {
+  selectedCustomerId = id;
+  renderCustomerList();
+  renderCustomerDetail(id);
+}
+
+function renderCustomerDetail(id) {
+  const panel = document.getElementById('cust-detail-panel');
+  const c = customers.find(x => x.id === id);
+  if (!c) {
+    panel.innerHTML = '<div class="cust-detail-empty">顧客を選択してください</div>';
+    return;
+  }
+  const visits = c.visits || [];
+  const mhzTotal = visits.reduce((s, v) => s + v.total, 0);
+  const mhzVisits = visits.length;
+  // Combine MHZ + Square data
+  const totalVisits = mhzVisits + (c.squareVisits || 0);
+  const totalSpend = mhzTotal + (c.squareTotal || 0);
+  const lastVisit = mhzVisits > 0
+    ? new Date(visits[0].date).toLocaleDateString('ja-JP')
+    : (c.squareLastVisit || '—');
+
+  const visitsHtml = visits.length === 0
+    ? '<div style="color:var(--text-dim);font-size:13px">来店記録はまだありません</div>'
+    : visits.map(v => {
+        const d = new Date(v.date);
+        const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        const itemsStr = v.items.map(i => `${i.name} ×${i.qty}`).join('、');
+        return `<div class="cust-visit">
+          <div class="cust-visit-header">
+            <span class="cust-visit-date">${dateStr}</span>
+            <span class="cust-visit-total">¥${v.total.toLocaleString()}</span>
+          </div>
+          <div class="cust-visit-items">${itemsStr}</div>
+        </div>`;
+      }).join('');
+
+  const squareBadge = c.squareVisits > 0
+    ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px">Square: ${c.squareVisits}回 ¥${(c.squareTotal||0).toLocaleString()}（〜${c.squareLastVisit||''}）</div>`
+    : '';
+  panel.innerHTML = `
+    <div class="cust-detail-header">
+      <div>
+        <div class="cust-detail-name">${c.name}</div>
+        ${c.kana ? `<div class="cust-detail-kana">${c.kana}</div>` : ''}
+      </div>
+      <div class="cust-detail-actions">
+        <button class="cust-edit-btn" onclick="openEditCustomerModal(${c.id})">編集</button>
+        <button class="cust-del-btn" onclick="deleteCustomer(${c.id})">削除</button>
+      </div>
+    </div>
+    <div class="cust-stats">
+      <div class="cust-stat-card">
+        <div class="cust-stat-label">来店回数（累計）</div>
+        <div class="cust-stat-value">${totalVisits}</div>
+      </div>
+      <div class="cust-stat-card">
+        <div class="cust-stat-label">累計金額</div>
+        <div class="cust-stat-value">¥${totalSpend.toLocaleString()}</div>
+      </div>
+      <div class="cust-stat-card">
+        <div class="cust-stat-label">最終来店</div>
+        <div class="cust-stat-value" style="font-size:12px">${lastVisit}</div>
+      </div>
+    </div>
+    ${squareBadge}
+    ${c.phone ? `<div class="cust-info-row">📞 <span>${c.phone}</span></div>` : ''}
+    ${c.memo ? `<div class="cust-info-row">📝 <span>${c.memo}</span></div>` : ''}
+    <div class="cust-history-title">来店履歴</div>
+    ${visitsHtml}
+  `;
+}
+
+// Customer modal
+let editingCustomerId = null;
+
+function openNewCustomerModal() {
+  editingCustomerId = null;
+  document.getElementById('cust-modal-title').textContent = '顧客を登録';
+  document.getElementById('cust-name').value = '';
+  document.getElementById('cust-kana').value = '';
+  document.getElementById('cust-phone').value = '';
+  document.getElementById('cust-memo').value = '';
+  document.getElementById('cust-modal').classList.add('open');
+  setTimeout(() => document.getElementById('cust-name').focus(), 100);
+}
+
+function openEditCustomerModal(id) {
+  const c = customers.find(x => x.id === id);
+  if (!c) return;
+  editingCustomerId = id;
+  document.getElementById('cust-modal-title').textContent = '顧客を編集';
+  document.getElementById('cust-name').value = c.name;
+  document.getElementById('cust-kana').value = c.kana || '';
+  document.getElementById('cust-phone').value = c.phone || '';
+  document.getElementById('cust-memo').value = c.memo || '';
+  document.getElementById('cust-modal').classList.add('open');
+}
+
+function closeCustModal() {
+  document.getElementById('cust-modal').classList.remove('open');
+}
+
+function saveCustomer() {
+  const name = document.getElementById('cust-name').value.trim();
+  if (!name) { showToast('名前を入力してください'); return; }
+  const kana = document.getElementById('cust-kana').value.trim();
+  const phone = document.getElementById('cust-phone').value.trim();
+  const memo = document.getElementById('cust-memo').value.trim();
+
+  if (editingCustomerId) {
+    const c = customers.find(x => x.id === editingCustomerId);
+    if (c) { c.name = name; c.kana = kana; c.phone = phone; c.memo = memo; }
+  } else {
+    customers.push({ id: Date.now(), name, kana, phone, memo, visits: [] });
+  }
+  saveCustomers();
+  closeCustModal();
+  renderCustomerList();
+  if (editingCustomerId) renderCustomerDetail(editingCustomerId);
+  showToast(`${name} を保存しました`);
+}
+
+function deleteCustomer(id) {
+  if (!confirm('この顧客を削除しますか？')) return;
+  customers = customers.filter(c => c.id !== id);
+  saveCustomers();
+  selectedCustomerId = null;
+  renderCustomerList();
+  document.getElementById('cust-detail-panel').innerHTML =
+    '<div class="cust-detail-empty">顧客を選択してください</div>';
+}
+
+// Charge modal customer search
+
+function onTicketCustInput() {
+  const q = document.getElementById('ticket-cust-input').value.trim().toLowerCase();
+  const dd = document.getElementById('ticket-cust-dropdown');
+  const sel = document.getElementById('ticket-cust-selected');
+  sel.textContent = '';
+
+  if (!q) { dd.classList.remove('open'); return; }
+
+  const matches = customers.filter(c =>
+    c.name.toLowerCase().includes(q) || (c.kana || '').toLowerCase().includes(q)
+  ).slice(0, 6);
+
+  if (matches.length === 0) {
+    dd.innerHTML = `<div class="charge-cust-opt" onclick="selectTicketCustomer('${q.replace(/'/g,"\'")}', false)">「${q}」で伝票を作成</div>`;
+  } else {
+    dd.innerHTML = matches.map(c => {
+      const visits = (c.visits || []).length;
+      const total = (c.visits || []).reduce((s, v) => s + v.total, 0);
+      return `<div class="charge-cust-opt" onclick="selectTicketCustomer('${c.name.replace(/'/g,"\'")}', true)">
+        ${c.name}
+        <div class="charge-cust-opt-sub">${c.kana ? c.kana + ' ／ ' : ''}${visits}回来店 ¥${total.toLocaleString()}</div>
+      </div>`;
+    }).join('');
+  }
+  dd.classList.add('open');
+}
+
+function selectTicketCustomer(name, isExisting) {
+  document.getElementById('ticket-cust-input').value = name;
+  document.getElementById('ticket-name-input').value = '';
+  document.getElementById('ticket-cust-dropdown').classList.remove('open');
+  const sel = document.getElementById('ticket-cust-selected');
+  if (isExisting) {
+    const c = customers.find(x => x.name === name);
+    const visits = c ? (c.visits || []).length : 0;
+    const total = c ? (c.visits || []).reduce((s, v) => s + v.total, 0) : 0;
+    sel.textContent = `${visits}回来店 / 累計¥${total.toLocaleString()}`;
+  } else {
+    sel.textContent = '新規顧客として登録';
+  }
+}
+
+function onChargeCustInput() {
+  const q = document.getElementById('charge-cust-input').value.trim().toLowerCase();
+  const dd = document.getElementById('charge-cust-dropdown');
+  const sel = document.getElementById('charge-cust-selected');
+  sel.textContent = '';
+
+  if (!q) { dd.classList.remove('open'); return; }
+
+  const matches = customers.filter(c =>
+    c.name.toLowerCase().includes(q) || (c.kana || '').toLowerCase().includes(q)
+  ).slice(0, 6);
+
+  if (matches.length === 0) {
+    dd.innerHTML = `<div class="charge-cust-opt" onclick="selectChargeCustomer('${q.replace(/'/g,"\'")}')">「${q}」で記録（新規）</div>`;
+  } else {
+    dd.innerHTML = matches.map(c => {
+      const visits = (c.visits || []).length;
+      return `<div class="charge-cust-opt" onclick="selectChargeCustomer('${c.name.replace(/'/g,"\'")}')">
+        ${c.name}
+        <div class="charge-cust-opt-sub">${c.kana ? c.kana + ' ／ ' : ''}${visits}回来店</div>
+      </div>`;
+    }).join('');
+  }
+  dd.classList.add('open');
+}
+
+function selectChargeCustomer(name) {
+  document.getElementById('charge-cust-input').value = name;
+  document.getElementById('charge-cust-dropdown').classList.remove('open');
+  const c = customers.find(x => x.name === name);
+  const sel = document.getElementById('charge-cust-selected');
+  if (c) {
+    const visits = (c.visits || []).length;
+    const total = (c.visits || []).reduce((s, v) => s + v.total, 0);
+    sel.textContent = `${visits}回来店 / 累計¥${total.toLocaleString()}`;
+  } else {
+    sel.textContent = '新規顧客として記録します';
+  }
+}
+
+
+// ===== DJ MASTER =====
+function renderDJList() {
+  const el = document.getElementById('dj-list');
+  if (!el) return;
+  if (djs.length === 0) { el.innerHTML = '<div class="empty-state">まだ登録されていません</div>'; return; }
+  el.innerHTML = djs.map((name, i) =>
+    `<div class="item-row"><span class="item-row-name">${name}</span>
+     <button class="item-del-btn" onclick="deleteDJ(${i})">削除</button></div>`
+  ).join('');
+}
+function addDJ() {
+  const name = document.getElementById('new-dj-name').value.trim();
+  if (!name) return;
+  if (!djs.includes(name)) { djs.push(name); saveDJs(); }
+  document.getElementById('new-dj-name').value = '';
+  renderDJList();
+  showToast(`「${name}」を登録しました`);
+}
+function deleteDJ(i) {
+  djs.splice(i, 1); saveDJs(); renderDJList();
+}
+function showChangePinPanel() {
+  const panel = document.getElementById('change-pin-panel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('current-pin-input').value = '';
+  document.getElementById('new-pin-input').value = '';
+}
+function hideChangePinPanel() {
+  document.getElementById('change-pin-panel').style.display = 'none';
+  document.getElementById('current-pin-input').value = '';
+  document.getElementById('new-pin-input').value = '';
+}
+function changePinFromAnalytics() {
+  const current = document.getElementById('current-pin-input').value.trim();
+  const newVal  = document.getElementById('new-pin-input').value.trim();
+  if (current !== getPin()) {
+    showToast('現在のPINが違います');
+    document.getElementById('current-pin-input').value = '';
+    return;
+  }
+  if (!/^\d{4}$/.test(newVal)) {
+    showToast('新しいPINは4桁の数字で入力してください');
+    return;
+  }
+  setPin(newVal);
+  hideChangePinPanel();
+  showToast('PINを変更しました');
+}
+function onChargeDjInput() {
+  const q = document.getElementById('charge-dj-input').value.trim().toLowerCase();
+  const dd = document.getElementById('charge-dj-dropdown');
+  if (!q) { dd.classList.remove('open'); return; }
+  const matches = djs.filter(d => d.toLowerCase().includes(q)).slice(0, 6);
+  if (matches.length === 0) { dd.classList.remove('open'); return; }
+  dd.innerHTML = matches.map(d =>
+    `<div class="charge-cust-opt" onclick="selectChargeDJ('${d.replace(/'/g,"\'")}')"> ${d}</div>`
+  ).join('');
+  dd.classList.add('open');
+}
+function selectChargeDJ(name) {
+  document.getElementById('charge-dj-input').value = name;
+  document.getElementById('charge-dj-dropdown').classList.remove('open');
+}
+
+// ===== PIN / ANALYTICS =====
+let pinBuffer = '';
+let analyticsPeriod = 'month';
+
+function openAnalytics() {
+  pinBuffer = '';
+  updatePinDots();
+  document.getElementById('pin-error').textContent = '';
+  document.getElementById('analytics-lock').style.display = 'flex';
+  document.getElementById('analytics-content').style.display = 'none';
+}
+function lockAnalytics() {
+  document.getElementById('analytics-lock').style.display = 'flex';
+  document.getElementById('analytics-content').style.display = 'none';
+  pinBuffer = '';
+  updatePinDots();
+}
+function pinInput(n) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += n;
+  updatePinDots();
+  if (pinBuffer.length === 4) {
+    if (pinBuffer === getPin()) {
+      document.getElementById('analytics-lock').style.display = 'none';
+      document.getElementById('analytics-content').style.display = 'flex';
+      renderAnalytics();
+    } else {
+      document.getElementById('pin-error').textContent = 'PINが違います';
+      const lockBox = document.querySelector('.lock-box');
+      lockBox.classList.add('pin-shake');
+      setTimeout(() => lockBox.classList.remove('pin-shake'), 400);
+      setTimeout(() => { pinBuffer = ''; updatePinDots(); document.getElementById('pin-error').textContent = ''; }, 600);
+    }
+  }
+}
+function pinDel() { pinBuffer = pinBuffer.slice(0, -1); updatePinDots(); }
+function pinClear() { pinBuffer = ''; updatePinDots(); }
+function updatePinDots() {
+  document.querySelectorAll('.pin-dots span').forEach((s, i) => {
+    s.classList.toggle('filled', i < pinBuffer.length);
+  });
+}
+function selectAnalyticsPeriod(p) {
+  analyticsPeriod = p;
+  document.querySelectorAll('.aperiod-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['month','3month','all'][i] === p);
+  });
+  renderAnalytics();
+}
+
+function getAnalyticsTransactions() {
+  const now = new Date();
+  const cutoff = analyticsPeriod === 'month'
+    ? new Date(now.getFullYear(), now.getMonth(), 1)
+    : analyticsPeriod === '3month'
+    ? new Date(now.getFullYear(), now.getMonth() - 2, 1)
+    : new Date(0);
+  const txns = [];
+  for (const [key, rec] of Object.entries(sales)) {
+    if (!rec.transactions) continue;
+    for (const tx of rec.transactions) {
+      if (new Date(tx.time) >= cutoff) txns.push({...tx, dateKey: key});
+    }
+  }
+  return txns;
+}
+
+function renderAnalytics() {
+  const txns = getAnalyticsTransactions();
+  const body = document.getElementById('analytics-body');
+
+  // ── DJ ranking ──
+  const djMap = {};
+  for (const tx of txns) {
+    const name = tx.dj || '（未記録）';
+    if (!djMap[name]) djMap[name] = { sales: 0, guests: 0, count: 0 };
+    djMap[name].sales += tx.total;
+    djMap[name].guests += tx.guests || 0;
+    djMap[name].count++;
+  }
+  const djRanked = Object.entries(djMap).sort((a,b) => b[1].sales - a[1].sales);
+  const rankNums = ['🥇','🥈','🥉'];
+  const rankClasses = ['gold','silver','bronze'];
+  const djHtml = djRanked.map(([name, d], i) => {
+    const unitPrice = d.guests > 0 ? Math.round(d.sales / d.guests) : '—';
+    return `<div class="dj-rank-row">
+      <div class="dj-rank-num ${rankClasses[i] || ''}">${i < 3 ? rankNums[i] : (i+1)}</div>
+      <div class="dj-rank-name">${name}</div>
+      <div class="dj-rank-stats">
+        <div class="dj-rank-sales">¥${d.sales.toLocaleString()}</div>
+        <div class="dj-rank-sub">${d.guests}名 / 単価${unitPrice !== '—' ? '¥'+unitPrice.toLocaleString() : '—'}</div>
+      </div>
+    </div>`;
+  }).join('') || '<div style="color:var(--text-dim);font-size:13px">データがありません</div>';
+
+  // ── 曜日別 ──
+  const wdays = ['日','月','火','水','木','金','土'];
+  const wdayTotals = [0,0,0,0,0,0,0];
+  const wdayCounts = [0,0,0,0,0,0,0];
+  for (const tx of txns) {
+    const d = new Date(tx.time).getDay();
+    wdayTotals[d] += tx.total;
+    wdayCounts[d]++;
+  }
+  const maxWday = Math.max(...wdayTotals) || 1;
+  const wdayHtml = wdayTotals.map((v, i) => {
+    const pct = Math.round((v / maxWday) * 100);
+    const avg = wdayCounts[i] > 0 ? Math.round(v / wdayCounts[i]) : 0;
+    return `<div class="wday-col">
+      <div class="wday-bar-wrap"><div class="wday-bar" style="height:${pct}%"></div></div>
+      <div class="wday-label">${wdays[i]}</div>
+      <div class="wday-value">${v > 0 ? '¥'+(v/1000).toFixed(0)+'k' : ''}</div>
+    </div>`;
+  }).join('');
+
+  // ── 時間帯ヒートマップ ──
+  const hours = Array.from({length: 10}, (_, i) => i + 18); // 18〜27時 (3am)
+  const heatData = {};
+  for (const tx of txns) {
+    let h = new Date(tx.time).getHours();
+    if (h < 6) h += 24;
+    const d = new Date(tx.time).getDay();
+    const k = `${h}_${d}`;
+    heatData[k] = (heatData[k] || 0) + tx.total;
+  }
+  const maxHeat = Math.max(...Object.values(heatData), 1);
+  const heatHeader = ['', ...wdays].map(l => `<div class="heatmap-label">${l}</div>`).join('');
+  const heatRows = hours.map(h => {
+    const label = `<div class="heatmap-label">${h >= 24 ? (h-24)+'時' : h+'時'}</div>`;
+    const cells = wdays.map((_, d) => {
+      const v = heatData[`${h}_${d}`] || 0;
+      const opacity = v > 0 ? 0.15 + 0.85 * (v / maxHeat) : 0;
+      const bg = v > 0 ? `rgba(230,160,60,${opacity.toFixed(2)})` : '';
+      return `<div class="heatmap-cell" style="background:${bg}" title="${v > 0 ? wdays[d]+' '+( h>=24?h-24:h)+'時 ¥'+v.toLocaleString() : ''}"></div>`;
+    }).join('');
+    return label + cells;
+  }).join('');
+
+  // ── 商品ランキング ──
+  const itemMap = {};
+  for (const tx of txns) {
+    for (const it of (tx.items || [])) {
+      if (!itemMap[it.name]) itemMap[it.name] = { qty: 0, sales: 0 };
+      itemMap[it.name].qty += it.qty;
+      itemMap[it.name].sales += it.price * it.qty;
+    }
+  }
+  const itemRanked = Object.entries(itemMap).sort((a,b) => b[1].qty - a[1].qty).slice(0, 15);
+  const maxQty = itemRanked[0]?.[1].qty || 1;
+  const itemHtml = itemRanked.map(([name, d]) =>
+    `<div class="item-rank-row">
+      <div class="item-rank-name">${name}</div>
+      <div class="item-rank-bar-wrap"><div class="item-rank-bar" style="width:${Math.round(d.qty/maxQty*100)}%"></div></div>
+      <div class="item-rank-count">${d.qty}杯 ¥${d.sales.toLocaleString()}</div>
+    </div>`
+  ).join('') || '<div style="color:var(--text-dim);font-size:13px">データがありません</div>';
+
+  body.innerHTML = `
+    <div>
+      <div class="analytics-section-title">🎧 DJ / イベント別</div>
+      ${djHtml}
+    </div>
+    <div>
+      <div class="analytics-section-title">📅 曜日別売上</div>
+      <div class="weekday-chart">${wdayHtml}</div>
+    </div>
+    <div>
+      <div class="analytics-section-title">🕐 時間帯ヒートマップ</div>
+      <div class="heatmap-wrap">
+        <div class="heatmap-grid">${heatHeader}${heatRows}</div>
+      </div>
+    </div>
+    <div>
+      <div class="analytics-section-title">🍺 商品ランキング（杯数）</div>
+      ${itemHtml}
+    </div>
+  `;
+}
+
+
+// ===== ITEM EDIT =====
+let editingItemId = null;
+
+function openItemEditModal(id) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  editingItemId = id;
+  document.getElementById('edit-item-name').value = item.name;
+  document.getElementById('edit-item-cat').value = item.category;
+  document.getElementById('edit-item-price').value = item.price;
+  document.getElementById('item-edit-modal').classList.add('open');
+}
+
+function closeItemEditModal() {
+  document.getElementById('item-edit-modal').classList.remove('open');
+  editingItemId = null;
+}
+
+function saveItemEdit() {
+  const item = items.find(i => i.id === editingItemId);
+  if (!item) return;
+  const name = document.getElementById('edit-item-name').value.trim();
+  const cat = document.getElementById('edit-item-cat').value;
+  const price = parseInt(document.getElementById('edit-item-price').value, 10);
+  if (!name || isNaN(price) || price < 0) {
+    showToast('名前と価格を入力してください');
+    return;
+  }
+  item.name = name;
+  item.category = cat;
+  item.price = price;
+  saveItems(items);
+  closeItemEditModal();
+  renderSettings();
+  renderRegister();
+  showToast(`${name} を更新しました`);
+}
+
+// ===== DEDUP / MERGE =====
+
+let dedupPairs = [];
+let mergeTarget = null; // {a, b} customer objects
+let mergeKeepId = null;
+
+// Normalize string for comparison
+function normStr(s) {
+  return (s || '').toLowerCase()
+    .replace(/[\s　]+/g, '')
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/[ァ-ン]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60)); // katakana→hiragana
+}
+
+// Simple similarity: longest common subsequence ratio
+function similarity(a, b) {
+  const na = normStr(a), nb = normStr(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1;
+  // Check containment
+  if (na.includes(nb) || nb.includes(na)) return 0.85;
+  // Count common chars
+  const setA = new Set(na), setB = new Set(nb);
+  let common = 0;
+  for (const c of setA) if (setB.has(c)) common++;
+  return (2 * common) / (setA.size + setB.size);
+}
+
+function scoreCustomers(a, b) {
+  // Compare names and kana
+  const nameSim = similarity(a.name, b.name);
+  const kanaSim = similarity(a.kana, b.kana);
+  // Also check cross: a.name vs b.kana etc
+  const crossSim = Math.max(
+    similarity(a.name, b.kana),
+    similarity(a.kana, b.name)
+  );
+  return Math.max(nameSim, kanaSim, crossSim);
+}
+
+function findDedupPairs() {
+  const pairs = [];
+  const n = customers.length;
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const score = scoreCustomers(customers[i], customers[j]);
+      if (score >= 0.7) {
+        pairs.push({ a: customers[i], b: customers[j], score });
+      }
+    }
+  }
+  // Sort by score desc
+  pairs.sort((x, y) => y.score - x.score);
+  return pairs.slice(0, 40); // max 40 pairs
+}
+
+function openDedupModal() {
+  dedupPairs = findDedupPairs();
+  renderDedupList();
+  document.getElementById('dedup-modal').classList.add('open');
+}
+function closeDedupModal() {
+  document.getElementById('dedup-modal').classList.remove('open');
+}
+
+function renderDedupList() {
+  const el = document.getElementById('dedup-list');
+  if (dedupPairs.length === 0) {
+    el.innerHTML = '<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px">重複候補は見つかりませんでした</div>';
+    return;
+  }
+  el.innerHTML = dedupPairs.map((pair, idx) => {
+    const { a, b, score } = pair;
+    const aVisits = (a.visits||[]).length + (a.squareVisits||0);
+    const bVisits = (b.visits||[]).length + (b.squareVisits||0);
+    const aTotal  = (a.visits||[]).reduce((s,v)=>s+v.total,0) + (a.squareTotal||0);
+    const bTotal  = (b.visits||[]).reduce((s,v)=>s+v.total,0) + (b.squareTotal||0);
+    return `<div class="dedup-pair">
+      <div class="dedup-pair-header">
+        <span style="font-size:12px;color:var(--text-dim)">候補 ${idx+1}</span>
+        <span class="dedup-score">類似度 ${Math.round(score*100)}%</span>
+      </div>
+      <div class="dedup-cards">
+        <div class="dedup-card">
+          <div class="dedup-card-name">${a.name}</div>
+          <div class="dedup-card-sub">${a.kana||'—'}<br>${aVisits}回来店 ¥${aTotal.toLocaleString()}</div>
+        </div>
+        <div class="dedup-arrow">⟷</div>
+        <div class="dedup-card">
+          <div class="dedup-card-name">${b.name}</div>
+          <div class="dedup-card-sub">${b.kana||'—'}<br>${bVisits}回来店 ¥${bTotal.toLocaleString()}</div>
+        </div>
+      </div>
+      <button class="dedup-merge-btn" onclick="openMergeModal(${a.id}, ${b.id})">この2件を統合する →</button>
+    </div>`;
+  }).join('');
+}
+
+function openMergeModal(idA, idB) {
+  const a = customers.find(c => c.id === idA);
+  const b = customers.find(c => c.id === idB);
+  if (!a || !b) return;
+  mergeTarget = { a, b };
+  mergeKeepId = null;
+  document.getElementById('merge-confirm-btn').disabled = true;
+
+  const aVisits = (a.visits||[]).length + (a.squareVisits||0);
+  const bVisits = (b.visits||[]).length + (b.squareVisits||0);
+  const aTotal  = (a.visits||[]).reduce((s,v)=>s+v.total,0) + (a.squareTotal||0);
+  const bTotal  = (b.visits||[]).reduce((s,v)=>s+v.total,0) + (b.squareTotal||0);
+
+  document.getElementById('merge-options').innerHTML = [a, b].map(c => {
+    const v = (c.visits||[]).length + (c.squareVisits||0);
+    const t = (c.visits||[]).reduce((s,vv)=>s+vv.total,0) + (c.squareTotal||0);
+    return `<div class="merge-opt" id="merge-opt-${c.id}" onclick="selectMergeKeep(${c.id})">
+      <div class="merge-opt-name">${c.name}</div>
+      <div class="merge-opt-sub">${c.kana||''} ／ ${v}回来店 ¥${t.toLocaleString()}</div>
+    </div>`;
+  }).join('');
+
+  const combined = {
+    visits: aVisits + bVisits,
+    total: aTotal + bTotal
+  };
+  document.getElementById('merge-preview').innerHTML =
+    `統合後: 来店${combined.visits}回 / 累計¥${combined.total.toLocaleString()}`;
+
+  document.getElementById('merge-modal').classList.add('open');
+}
+
+function selectMergeKeep(id) {
+  mergeKeepId = id;
+  document.querySelectorAll('.merge-opt').forEach(el => {
+    el.classList.toggle('selected', el.id === 'merge-opt-' + id);
+  });
+  document.getElementById('merge-confirm-btn').disabled = false;
+}
+
+function closeMergeModal() {
+  document.getElementById('merge-modal').classList.remove('open');
+  mergeTarget = null;
+  mergeKeepId = null;
+}
+
+function confirmMerge() {
+  if (!mergeTarget || !mergeKeepId) return;
+  const { a, b } = mergeTarget;
+  const keep = a.id === mergeKeepId ? a : b;
+  const drop = a.id === mergeKeepId ? b : a;
+
+  // Merge visits
+  keep.visits = [...(keep.visits||[]), ...(drop.visits||[])].sort((x,y) => new Date(y.date) - new Date(x.date));
+  // Merge Square data
+  keep.squareVisits = (keep.squareVisits||0) + (drop.squareVisits||0);
+  keep.squareTotal  = (keep.squareTotal||0)  + (drop.squareTotal||0);
+  // Keep the later lastVisit
+  if (drop.squareLastVisit && (!keep.squareLastVisit || drop.squareLastVisit > keep.squareLastVisit)) {
+    keep.squareLastVisit = drop.squareLastVisit;
+  }
+  // Keep earlier firstVisit
+  if (drop.squareFirstVisit && (!keep.squareFirstVisit || drop.squareFirstVisit < keep.squareFirstVisit)) {
+    keep.squareFirstVisit = drop.squareFirstVisit;
+  }
+  // Merge memo
+  if (drop.memo && drop.memo !== keep.memo) {
+    keep.memo = [keep.memo, drop.memo].filter(Boolean).join(' / ');
+  }
+  // Remove dropped customer
+  customers = customers.filter(c => c.id !== drop.id);
+  saveCustomers();
+
+  // Remove from dedup pairs
+  dedupPairs = dedupPairs.filter(p => p.a.id !== drop.id && p.b.id !== drop.id);
+
+  closeMergeModal();
+  renderDedupList();
+  renderCustomerList();
+  if (selectedCustomerId === drop.id) {
+    selectedCustomerId = keep.id;
+    renderCustomerDetail(keep.id);
+  }
+  showToast(`「${keep.name}」に統合しました`);
+}
+
+
+// ===== BACKUP / RESTORE =====
+function exportBackup() {
+  const data = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    items: items,
+    sales: sales,
+    customers: customers,
+    djs: djs,
+    tickets: tickets,
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `megahertz-backup-${dateStr}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('バックアップをエクスポートしました');
+}
+
+function importBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.version || !data.items || !data.sales) {
+        showToast('ファイルの形式が正しくありません');
+        return;
+      }
+      if (!confirm('現在のデータをバックアップで上書きします。よろしいですか？')) {
+        event.target.value = '';
+        return;
+      }
+      // Restore all data
+      items = data.items || [];
+      sales = data.sales || {};
+      customers = data.customers || [];
+      djs = data.djs || [];
+      tickets = data.tickets && data.tickets.length > 0
+        ? data.tickets
+        : [{ id: Date.now(), name: '伝票1', cart: {} }];
+
+      saveItems(items);
+      saveSales(sales);
+      saveCustomers();
+      saveDJs();
+      saveTickets();
+
+      // Reset active ticket
+      activeTicketId = tickets[0].id;
+
+      // Re-render everything
+      renderTicketBar();
+      renderRegister();
+      renderSales();
+      renderSettings();
+      renderCustomerList();
+
+      event.target.value = '';
+      showToast(`復元完了 — 顧客${customers.length}人 / 商品${items.length}件`);
+    } catch (err) {
+      showToast('読み込みに失敗しました: ' + err.message);
+      event.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>
