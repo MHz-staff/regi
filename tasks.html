@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MHZ TASKS">
+<meta name="theme-color" content="#0f0e0d">
+<title>MHZ TASKS</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0e0d;
+    --surface: #1a1917;
+    --surface2: #242220;
+    --amber: #e8a832;
+    --amber-dim: #a07420;
+    --red: #c94a3a;
+    --green: #4a9e6b;
+    --text: #e8e0d4;
+    --text-dim: #7a7268;
+    --border: #2e2b28;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  header {
+    padding: 20px 20px 0;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--amber);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .header-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  .time-filter {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .time-filter::-webkit-scrollbar { display: none; }
+
+  .time-btn {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .time-btn.active {
+    background: var(--amber);
+    border-color: var(--amber);
+    color: #0f0e0d;
+    font-weight: 700;
+  }
+
+  .task-list {
+    padding: 0 20px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .task-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    animation: slideIn 0.2s ease both;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .task-item:active { background: var(--surface2); transform: scale(0.98); }
+  .task-item.done { opacity: 0.35; }
+  .task-item.done .task-text { text-decoration: line-through; }
+
+  .check-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--text-dim);
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .task-item.done .check-circle {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .check-circle::after {
+    content: '';
+    width: 5px;
+    height: 9px;
+    border-right: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    transform: rotate(40deg) translateY(-1px);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .task-item.done .check-circle::after { opacity: 1; }
+
+  .task-body { flex: 1; min-width: 0; }
+
+  .task-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  .task-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+  }
+
+  .task-time {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--amber);
+    letter-spacing: 0.1em;
+  }
+
+  .task-cat {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  .delete-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+  }
+  .delete-btn:active { color: var(--red); }
+
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 2;
+  }
+
+  .add-fab {
+    position: fixed;
+    bottom: calc(28px + env(safe-area-inset-bottom));
+    right: 20px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--amber);
+    border: none;
+    color: #0f0e0d;
+    font-size: 26px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(232,168,50,0.35);
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.1s;
+    z-index: 50;
+  }
+  .add-fab:active { transform: scale(0.93); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: flex-end;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    padding: 20px 20px calc(40px + env(safe-area-inset-bottom));
+    width: 100%;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .modal-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--amber);
+    letter-spacing: 0.15em;
+    margin-bottom: 14px;
+  }
+
+  .modal textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 15px;
+    padding: 12px;
+    resize: none;
+    outline: none;
+    line-height: 1.6;
+  }
+  .modal textarea:focus { border-color: var(--amber-dim); }
+
+  .modal-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .modal select {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+    appearance: none;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .btn-cancel {
+    flex: 1;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .btn-add {
+    flex: 2;
+    padding: 12px;
+    background: var(--amber);
+    border: none;
+    border-radius: 8px;
+    color: #0f0e0d;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 12px 20px 6px;
+  }
+
+  .stats {
+    display: flex;
+    gap: 12px;
+    padding: 8px 20px 14px;
+  }
+  .stat {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+  .stat span { color: var(--amber); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MHZ TASKS</div>
+  <div class="header-sub">営業中の隙間仕事</div>
+</header>
+
+<div class="stats">
+  <div class="stat">残り <span id="remaining">0</span></div>
+  <div class="stat">完了 <span id="done-count">0</span></div>
+</div>
+
+<div class="time-filter">
+  <button class="time-btn active" onclick="filterTime('all', this)">すべて</button>
+  <button class="time-btn" onclick="filterTime('5', this)">〜5分</button>
+  <button class="time-btn" onclick="filterTime('15', this)">〜15分</button>
+  <button class="time-btn" onclick="filterTime('30', this)">〜30分</button>
+</div>
+
+<div class="section-label">タスク</div>
+<div class="task-list" id="task-list"></div>
+
+<button class="add-fab" onclick="openModal()">+</button>
+
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title">NEW TASK</div>
+    <textarea id="task-input" rows="2" placeholder="例：Googleビジネスの写真を更新する"></textarea>
+    <div class="modal-row">
+      <select id="time-select">
+        <option value="5">〜5分</option>
+        <option value="15">〜15分</option>
+        <option value="30">〜30分</option>
+      </select>
+      <select id="cat-select">
+        <option value="SNS">SNS</option>
+        <option value="Google">Google</option>
+        <option value="メニュー">メニュー</option>
+        <option value="事務">事務</option>
+        <option value="その他">その他</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModalDirect()">キャンセル</button>
+      <button class="btn-add" onclick="addTask()">追加</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'mhz_tasks_v1';
+let tasks = [];
+let currentFilter = 'all';
+
+const DEFAULT_TASKS = [
+  { id: 1, text: 'Googleビジネスの写真・情報を確認・更新', time: '5', cat: 'Google', done: false },
+  { id: 2, text: 'Instagramのキャプション1本書く', time: '5', cat: 'SNS', done: false },
+  { id: 3, text: '次のイベントのハッシュタグリストを作る', time: '15', cat: 'SNS', done: false },
+  { id: 4, text: 'ドリンクメニューの見直し・価格チェック', time: '15', cat: 'メニュー', done: false },
+  { id: 5, text: 'フライヤーのテキスト草案を書く', time: '30', cat: 'その他', done: false },
+];
+
+function load() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    tasks = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_TASKS));
+  } catch(e) {
+    tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+  }
+}
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch(e) {}
+}
+
+function render() {
+  const list = document.getElementById('task-list');
+  const filtered = currentFilter === 'all'
+    ? tasks
+    : tasks.filter(t => t.time === currentFilter);
+
+  document.getElementById('remaining').textContent = tasks.filter(t => !t.done).length;
+  document.getElementById('done-count').textContent = tasks.filter(t => t.done).length;
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty">このカテゴリのタスクはなし<br><span style="font-size:11px">＋ で追加しよう</span></div>`;
+    return;
+  }
+
+  list.innerHTML = '';
+  [...filtered].sort((a,b) => a.done - b.done).forEach((t, i) => {
+    const el = document.createElement('div');
+    el.className = 'task-item' + (t.done ? ' done' : '');
+    el.style.animationDelay = (i * 0.03) + 's';
+    el.innerHTML = `
+      <div class="check-circle" onclick="toggleDone(${t.id})"></div>
+      <div class="task-body" onclick="toggleDone(${t.id})">
+        <div class="task-text">${t.text}</div>
+        <div class="task-meta">
+          <span class="task-time">〜${t.time}分</span>
+          <span class="task-cat">${t.cat}</span>
+        </div>
+      </div>
+      <button class="delete-btn" onclick="deleteTask(${t.id})">×</button>
+    `;
+    list.appendChild(el);
+  });
+}
+
+function filterTime(val, btn) {
+  currentFilter = val;
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function toggleDone(id) {
+  const t = tasks.find(t => t.id === id);
+  if (t) { t.done = !t.done; save(); render(); }
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  save(); render();
+}
+
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('task-input').focus(), 300);
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal')) closeModalDirect();
+}
+
+function closeModalDirect() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('task-input').value = '';
+}
+
+function addTask() {
+  const text = document.getElementById('task-input').value.trim();
+  if (!text) return;
+  const time = document.getElementById('time-select').value;
+  const cat = document.getElementById('cat-select').value;
+  tasks.unshift({ id: Date.now(), text, time, cat, done: false });
+  save(); render();
+  closeModalDirect();
+}
+
+load();
+render();
+</script>
+</body>
+</html>
