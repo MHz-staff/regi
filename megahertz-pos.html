@@ -8,18 +8,18 @@
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
 
   :root {
-    --bg: #0f0e0c;
-    --surface: #1a1814;
-    --surface2: #252219;
-    --border: #2e2a22;
-    --amber: #e8a030;
-    --amber-dim: #a06c1a;
-    --cream: #f0e8d8;
-    --cream-dim: #8a7f6e;
-    --red: #c84030;
-    --green: #507840;
-    --text: #e8e0d0;
-    --text-dim: #6a6058;
+    --bg: #f5f5f5;
+    --surface: #ffffff;
+    --surface2: #f0f0f0;
+    --border: #d8d8d8;
+    --amber: #d4780a;
+    --amber-dim: #e8a030;
+    --cream: #1a1a1a;
+    --cream-dim: #555555;
+    --red: #cc3322;
+    --green: #2a7a3a;
+    --text: #1a1a1a;
+    --text-dim: #888888;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -40,8 +40,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
+    border-bottom: 1px solid #222;
+    background: #1a1a1a;
     flex-shrink: 0;
   }
 
@@ -49,14 +49,14 @@
     font-family: 'Space Mono', monospace;
     font-size: 13px;
     letter-spacing: 0.2em;
-    color: var(--amber);
+    color: #e8a030;
     font-weight: 700;
   }
 
   .date-display {
     font-family: 'Space Mono', monospace;
     font-size: 11px;
-    color: var(--text-dim);
+    color: #888;
     letter-spacing: 0.05em;
   }
 
@@ -77,17 +77,17 @@
   }
 
   .nav-tab.active {
-    background: var(--amber);
-    color: var(--bg);
+    background: #e8a030;
+    color: #1a1a1a;
   }
 
   .nav-tab:not(.active) {
     background: transparent;
-    color: var(--text-dim);
+    color: #aaa;
   }
 
   .nav-tab:not(.active):active {
-    background: var(--surface2);
+    background: #333;
     color: var(--text);
   }
 
@@ -519,7 +519,7 @@
     border-bottom: 1px solid var(--border);
   }
 
-  .item-list { display: flex; flex-direction: column; gap: 6px; }
+  .item-list { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; padding-right: 4px; }
 
   .item-row {
     display: flex;
@@ -814,6 +814,9 @@
     flex-direction: column;
     gap: 4px;
     min-height: 40px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px;
   }
 
   .sort-row {
@@ -1826,6 +1829,7 @@
           <input type="text" id="new-name" placeholder="商品名">
           <input type="text" id="new-cat" placeholder="カテゴリ">
           <input type="number" id="new-price" placeholder="価格" min="0">
+          <input type="number" id="new-cost" placeholder="原価" min="0">
           <button class="add-btn" onclick="addItem()">追加</button>
         </div>
       </div>
@@ -1838,7 +1842,11 @@
         <div class="sort-list" id="sort-list"></div>
       </div>
       <div class="settings-section">
-        <div class="settings-title">商品リスト</div>
+        <div class="settings-title-row">
+          <div class="settings-title">商品リスト</div>
+          <input type="text" id="settings-item-search" placeholder="検索…" oninput="renderSettings()"
+            style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:'Noto Sans JP',sans-serif;width:140px">
+        </div>
         <div class="item-list" id="item-list"></div>
       </div>
     </div>
@@ -2065,6 +2073,17 @@
   </div>
 </div>
 
+<!-- LAST ORDER MODAL -->
+<div class="modal-overlay" id="last-order-modal">
+  <div class="modal" style="max-width:400px;max-height:80vh;display:flex;flex-direction:column">
+    <div class="modal-title" id="last-order-modal-title"></div>
+    <div id="last-order-modal-content" style="flex:1;overflow-y:auto;margin-bottom:12px"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" style="width:100%" onclick="document.getElementById('last-order-modal').classList.remove('open')">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <!-- ITEM SEARCH MODAL -->
 <div class="modal-overlay" id="item-search-modal">
   <div class="modal" style="max-width:420px;max-height:85dvh;display:flex;flex-direction:column">
@@ -2201,6 +2220,11 @@
       <div>
         <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">価格</div>
         <input type="number" id="edit-item-price" inputmode="numeric" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">原価 <span style="font-size:10px;color:var(--text-dim)" id="edit-item-cost-rate"></span></div>
+        <input type="number" id="edit-item-cost" inputmode="numeric" placeholder="0" oninput="updateCostRate()"
+          style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px">
       </div>
     </div>
     <div class="modal-actions">
@@ -2423,11 +2447,7 @@ window.onerror = function(msg, src, line, col, err) {
 document.addEventListener('DOMContentLoaded', () => {
   try {
     updateHeaderDate();
-    if (tickets.length === 0) {
-      tickets.push({ id: Date.now(), name: '伝票1', cart: {} });
-      saveTickets();
-    }
-    activeTicketId = tickets[0].id;
+    activeTicketId = tickets.length > 0 ? tickets[0].id : null;
     renderTicketBar();
     renderRegister();
     renderSales();
@@ -2661,12 +2681,20 @@ function clearCart() {
 }
 
 function renderCart() {
-  const cart = getActiveCart();
-  const keys = Object.keys(cart);
   const cartItemsEl = document.getElementById('cart-items');
 
+  if (!activeTicketId) {
+    cartItemsEl.innerHTML = '<div class="empty-state">＋ ボタンで新しい伝票を作成してください</div>';
+    document.getElementById('total-display').textContent = '¥0';
+    document.getElementById('charge-btn').disabled = true;
+    return;
+  }
+
+  const cart = getActiveCart();
+  const keys = Object.keys(cart);
+
   if (keys.length === 0) {
-    cartItemsEl.innerHTML = '<div class="empty-state" id="cart-empty">商品を選択してください</div>';
+    cartItemsEl.innerHTML = '<div class="empty-state">商品を選択してください</div>';
     document.getElementById('total-display').textContent = '¥0';
     document.getElementById('charge-btn').disabled = true;
     return;
@@ -2800,10 +2828,7 @@ function confirmCharge() {
   // Remove the paid ticket and switch to another
   const idx = tickets.findIndex(t => t.id === activeTicketId);
   tickets.splice(idx, 1);
-  if (tickets.length === 0) {
-    tickets.push({ id: Date.now(), name: '伝票1', cart: {} });
-  }
-  activeTicketId = tickets[Math.max(0, idx - 1)].id;
+  activeTicketId = tickets.length > 0 ? tickets[Math.max(0, idx - 1)].id : null;
   saveTickets();
   renderTicketBar();
   renderCart();
@@ -2972,25 +2997,33 @@ function renderSettings() {
   renderDJList();
   renderSortSection();
   const list = document.getElementById('item-list');
-  if (items.length === 0) {
-    list.innerHTML = '<div class="empty-state">商品がありません</div>';
+  const q = (document.getElementById('settings-item-search')?.value || '').trim().toLowerCase();
+  const filtered = q ? items.filter(i => i.name.toLowerCase().includes(q) || (i.category||'').toLowerCase().includes(q)) : items;
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-state">見つかりません</div>';
     return;
   }
-  list.innerHTML = items.map(item =>
-    `<div class="item-row">
+  list.innerHTML = filtered.map(item => {
+    const costRate = (item.cost && item.price) ? Math.round(item.cost / item.price * 100) : null;
+    const costTag = costRate !== null
+      ? `<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${costRate<=30?'#e8f5e9':costRate<=50?'#fff8e1':'#ffebee'};color:${costRate<=30?'var(--green)':costRate<=50?'var(--amber)':'var(--red)'}">${costRate}%</span>`
+      : '';
+    return `<div class="item-row">
       <span class="item-row-name">${item.name}</span>
       <span class="item-row-cat">${item.category}</span>
       <span class="item-row-price">¥${item.price.toLocaleString()}</span>
+      ${costTag}
       <button class="edit-btn" onclick="openItemEditModal(${item.id})">編集</button>
       <button class="del-btn" onclick="deleteItem(${item.id})">削除</button>
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
 }
 
 function addItem() {
-  const name = document.getElementById('new-name').value.trim();
-  const cat = document.getElementById('new-cat').value.trim() || 'その他';
+  const name  = document.getElementById('new-name').value.trim();
+  const cat   = document.getElementById('new-cat').value.trim() || 'その他';
   const price = parseInt(document.getElementById('new-price').value, 10);
+  const cost  = parseInt(document.getElementById('new-cost').value, 10) || 0;
 
   if (!name || isNaN(price) || price < 0) {
     showToast('名前と価格を入力してください');
@@ -2998,12 +3031,15 @@ function addItem() {
   }
 
   const newId = items.length > 0 ? Math.max(...items.map(i=>i.id)) + 1 : 1;
-  items.push({ id: newId, name, category: cat, price });
+  const newItem = { id: newId, name, category: cat, price };
+  if (cost > 0) newItem.cost = cost;
+  items.push(newItem);
   saveItems(items);
 
   document.getElementById('new-name').value = '';
   document.getElementById('new-cat').value = '';
   document.getElementById('new-price').value = '';
+  document.getElementById('new-cost').value = '';
 
   renderSettings();
   renderRegister();
@@ -3487,15 +3523,15 @@ function renderCustomerDetail(id) {
     </div>
     <div class="cust-stats">
       <div class="cust-stat-card">
-        <div class="cust-stat-label">来店回数（累計）</div>
-        <div class="cust-stat-value">${totalVisits}</div>
-      </div>
-      <div class="cust-stat-card">
         <div class="cust-stat-label">最終来店</div>
         <div class="cust-stat-value" style="font-size:12px">${lastVisit}</div>
       </div>
+      <div class="cust-stat-card">
+        <div class="cust-stat-label">累計来店</div>
+        <div class="cust-stat-value">${totalVisits}回</div>
+      </div>
     </div>
-    ${c.squareVisits > 0 ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px">Square: ${c.squareVisits}回来店（〜${c.squareLastVisit||''}）</div>` : ''}
+    ${buildLastOrderSection(c)}
     ${c.phone ? `<div class="cust-info-row">📞 <span>${c.phone}</span></div>` : ''}
     ${c.sns ? `<div class="cust-info-row">📱 <span>${c.sns}</span></div>` : ''}
     ${c.birthday ? `<div class="cust-info-row">🎂 <span>${formatBirthday(c.birthday)}</span>${isBirthdayToday(c.birthday) ? '<span class="bd-badge">🎉 今日は誕生日！</span>' : ''}</div>` : ''}
@@ -3513,6 +3549,84 @@ let modalSelectedGender = '';
 let modalSelectedTags = [];
 
 // ===== TAG / GENDER HELPERS =====
+function buildLastOrderSection(c) {
+  // Get all visits sorted by date desc
+  const allVisits = [...(c.visits || [])].sort((a, b) => b.date > a.date ? 1 : -1);
+  if (allVisits.length === 0) return '';
+
+  const last = allVisits[0];
+  const dateLabel = last.date ? last.date.slice(5).replace('-', '/') : '不明';
+
+  // Build item frequency map from all visits
+  const freq = {};
+  for (const v of allVisits) {
+    for (const item of (v.items || [])) {
+      const name = typeof item === 'string' ? item : item.name;
+      if (name) freq[name] = (freq[name] || 0) + 1;
+    }
+  }
+  const topItems = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const recHtml = topItems.length > 0
+    ? `<div style="margin-top:6px;font-size:11px;color:var(--amber)">⭐ よく頼む: ${topItems.map(([n, cnt]) => `${n}(${cnt}回)`).join('・')}</div>`
+    : '';
+
+  const lastItems = (last.items || []);
+  const lastItemNames = lastItems.map(i => typeof i === 'string' ? i : i.name).filter(Boolean);
+
+  return `
+    <div style="margin:8px 0;padding:8px 10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:11px;color:var(--text-dim)">前回伝票 ${dateLabel}</span>
+        ${lastItemNames.length > 0 ? `<button onclick="showLastOrderModal(${c.id})" style="font-size:10px;padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--amber);cursor:pointer">詳細</button>` : ''}
+      </div>
+      ${lastItemNames.length > 0 ? `<div style="font-size:12px;color:var(--cream);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lastItemNames.join('・')}</div>` : '<div style="font-size:11px;color:var(--text-dim);margin-top:4px">注文記録なし</div>'}
+      ${recHtml}
+    </div>`;
+}
+
+function showLastOrderModal(custId) {
+  const c = customers.find(x => x.id === custId);
+  if (!c) return;
+  const allVisits = [...(c.visits || [])].sort((a, b) => b.date > a.date ? 1 : -1);
+  if (allVisits.length === 0) return;
+
+  const freq = {};
+  for (const v of allVisits) {
+    for (const item of (v.items || [])) {
+      const name = typeof item === 'string' ? item : item.name;
+      if (name) freq[name] = (freq[name] || 0) + 1;
+    }
+  }
+  const topItems = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  const visitsHtml = allVisits.slice(0, 5).map(v => {
+    const itemNames = (v.items || []).map(i => typeof i === 'string' ? i : i.name).filter(Boolean);
+    const total = v.total ? `¥${v.total.toLocaleString()}` : '';
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--text-dim)">${v.date || ''}</span>
+        <span style="font-size:12px;color:var(--amber);font-family:'Space Mono',monospace">${total}</span>
+      </div>
+      <div style="font-size:13px;color:var(--cream)">${itemNames.join('・') || '記録なし'}</div>
+    </div>`;
+  }).join('');
+
+  const recHtml = topItems.length > 0
+    ? `<div style="margin-bottom:14px;padding:10px;background:var(--surface2);border-radius:8px">
+        <div style="font-size:11px;color:var(--amber);margin-bottom:6px">⭐ 今日のおすすめ（よく頼む順）</div>
+        ${topItems.map(([name, cnt]) => `<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0"><span style="color:var(--cream)">${name}</span><span style="color:var(--text-dim);font-size:11px">${cnt}回</span></div>`).join('')}
+      </div>`
+    : '';
+
+  document.getElementById('last-order-modal-content').innerHTML = `
+    ${recHtml}
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">直近5回の注文</div>
+    ${visitsHtml || '<div style="color:var(--text-dim)">記録なし</div>'}
+  `;
+  document.getElementById('last-order-modal-title').textContent = c.name;
+  document.getElementById('last-order-modal').classList.add('open');
+}
+
 function tagClass(tag) {
   if (tag === 'DJ') return 'tag-dj';
   if (tag === 'スタッフ') return 'tag-staff';
@@ -4121,6 +4235,19 @@ function renderAnalytics() {
 // ===== ITEM EDIT =====
 let editingItemId = null;
 
+function updateCostRate() {
+  const price = parseInt(document.getElementById('edit-item-price').value) || 0;
+  const cost  = parseInt(document.getElementById('edit-item-cost').value)  || 0;
+  const el = document.getElementById('edit-item-cost-rate');
+  if (el && price > 0 && cost > 0) {
+    const rate = Math.round(cost / price * 100);
+    const color = rate <= 30 ? 'var(--green)' : rate <= 50 ? 'var(--amber)' : 'var(--red)';
+    el.innerHTML = `→ 原価率 <span style="color:${color};font-weight:700">${rate}%</span>`;
+  } else if (el) {
+    el.innerHTML = '';
+  }
+}
+
 function openItemEditModal(id) {
   const item = items.find(i => i.id === id);
   if (!item) return;
@@ -4128,6 +4255,8 @@ function openItemEditModal(id) {
   document.getElementById('edit-item-name').value = item.name;
   document.getElementById('edit-item-cat').value = item.category;
   document.getElementById('edit-item-price').value = item.price;
+  document.getElementById('edit-item-cost').value = item.cost || '';
+  updateCostRate();
   document.getElementById('item-edit-modal').classList.add('open');
 }
 
@@ -4139,9 +4268,10 @@ function closeItemEditModal() {
 function saveItemEdit() {
   const item = items.find(i => i.id === editingItemId);
   if (!item) return;
-  const name = document.getElementById('edit-item-name').value.trim();
-  const cat = document.getElementById('edit-item-cat').value;
+  const name  = document.getElementById('edit-item-name').value.trim();
+  const cat   = document.getElementById('edit-item-cat').value;
   const price = parseInt(document.getElementById('edit-item-price').value, 10);
+  const cost  = parseInt(document.getElementById('edit-item-cost').value, 10) || 0;
   if (!name || isNaN(price) || price < 0) {
     showToast('名前と価格を入力してください');
     return;
@@ -4149,6 +4279,7 @@ function saveItemEdit() {
   item.name = name;
   item.category = cat;
   item.price = price;
+  if (cost > 0) item.cost = cost; else delete item.cost;
   saveItems(items);
   closeItemEditModal();
   renderSettings();
