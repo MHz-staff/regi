@@ -2850,29 +2850,40 @@ function renderSales() {
   const m = viewingMonth.getMonth();
   document.getElementById('month-label').textContent = `${y}年 ${m+1}月`;
 
-  // Collect days with sales in this month
+  const days = ['日','月','火','水','木','金','土'];
+  const todayKey = toDateKey(new Date());
   const daysInMonth = new Date(y, m+1, 0).getDate();
-  let total = 0, openDays = 0, maxDay = 0, maxSales = 0;
 
+  // Merge レジ sales + Square sales for this month
+  let monthTotal = 0, openDays = 0;
   const entries = [];
-  for (let d = 1; d <= daysInMonth; d++) {
+
+  for (let d = daysInMonth; d >= 1; d--) {
     const key = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const rec = sales[key];
-    if (rec && rec.amount > 0) {
-      total += rec.amount;
-      openDays++;
-      if (rec.amount > maxSales) { maxSales = rec.amount; maxDay = d; }
-      entries.push({ d, key, amount: rec.amount, memo: rec.memo || '',
-        cash: rec.cash || 0, card: rec.card || 0, qr: rec.qr || 0 });
-    }
+    const sqRec = squareSalesData[key];
+
+    const sqTotal   = sqRec ? (sqRec.total || 0) : 0;
+    const manualAmt = rec ? (rec.amount || 0) : 0;
+    const dayTotal  = sqTotal + manualAmt;
+
+    if (dayTotal === 0 && !rec) continue;
+
+    const dt = new Date(y, m, d);
+    const dayName = days[dt.getDay()];
+    const isToday = key === todayKey;
+
+    monthTotal += dayTotal;
+    openDays++;
+    entries.push({ d, key, dayTotal, sqTotal, manualAmt, rec: rec || {}, sqRec, dayName, isToday });
   }
 
-  // Summary cards
-  const avg = openDays > 0 ? Math.round(total / openDays) : 0;
+  // Monthly summary
+  const avg = openDays > 0 ? Math.round(monthTotal / openDays) : 0;
   document.getElementById('month-summary').innerHTML = `
     <div class="summary-card">
       <div class="summary-card-label">月次売上</div>
-      <div class="summary-card-value">¥${total.toLocaleString()}</div>
+      <div class="summary-card-value">¥${monthTotal.toLocaleString()}</div>
       <div class="summary-card-sub">${openDays}日営業</div>
     </div>
     <div class="summary-card">
@@ -2880,44 +2891,22 @@ function renderSales() {
       <div class="summary-card-value">¥${avg.toLocaleString()}</div>
       <div class="summary-card-sub">営業日ベース</div>
     </div>
-    <div class="summary-card">
-      <div class="summary-card-label">最高売上日</div>
-      <div class="summary-card-value">${maxDay > 0 ? maxDay+'日' : '—'}</div>
-      <div class="summary-card-sub">${maxSales > 0 ? '¥'+maxSales.toLocaleString() : ''}</div>
-    </div>
   `;
 
-  // Today's breakdown bar (current month only)
-  const days = ['日','月','火','水','木','金','土'];
-  const todayKey = toDateKey(new Date());
+  // TODAY bar
   const now = new Date();
   const isCurrentMonth = y === now.getFullYear() && m === now.getMonth();
-
-  const salesContent = document.getElementById('sales-content') || document.getElementById('daily-list').parentElement;
   let todayBarEl = document.getElementById('today-summary-bar');
-
   if (isCurrentMonth) {
-    const todayRec = sales[todayKey] || {};
-    const todayTotal = todayRec.amount || 0;
-    const todayCash = todayRec.cash || 0;
-    const todayCard = todayRec.card || 0;
-    const todayQr   = todayRec.qr   || 0;
+    const tRec = sales[todayKey] || {};
+    const tSq  = squareSalesData[todayKey];
+    const tTotal = (tRec.amount || 0) + (tSq ? tSq.total : 0);
     const barHtml = `<div class="today-summary" id="today-summary-bar">
       <div class="today-summary-title">TODAY</div>
-      <div class="today-summary-total">¥${todayTotal.toLocaleString()}</div>
+      <div class="today-summary-total">¥${tTotal.toLocaleString()}</div>
       <div class="today-summary-breakdown">
-        <div class="today-bd-item cash">
-          <div class="today-bd-label">💴 現金</div>
-          <div class="today-bd-value">¥${todayCash.toLocaleString()}</div>
-        </div>
-        <div class="today-bd-item card">
-          <div class="today-bd-label">💳 カード</div>
-          <div class="today-bd-value">¥${todayCard.toLocaleString()}</div>
-        </div>
-        <div class="today-bd-item qr">
-          <div class="today-bd-label">📱 QR</div>
-          <div class="today-bd-value">¥${todayQr.toLocaleString()}</div>
-        </div>
+        ${tSq ? `<div class="today-bd-item card"><div class="today-bd-label">■ Square</div><div class="today-bd-value">¥${tSq.total.toLocaleString()}</div></div>` : ''}
+        ${tRec.amount > 0 ? `<div class="today-bd-item cash"><div class="today-bd-label">💴 現金等</div><div class="today-bd-value">¥${tRec.amount.toLocaleString()}</div></div>` : ''}
       </div>
     </div>`;
     document.getElementById('month-summary').insertAdjacentHTML('afterend', todayBarEl ? '' : barHtml);
@@ -2926,31 +2915,27 @@ function renderSales() {
     if (todayBarEl) todayBarEl.remove();
   }
 
-  // Show entries in reverse order
-  const sorted = [...entries].reverse();
-
-  if (sorted.length === 0) {
-    document.getElementById('daily-list').innerHTML =
-      `<div class="no-sales-row">この月の売上データはありません</div>`;
-  } else {
-    document.getElementById('daily-list').innerHTML = sorted.map(e => {
-      const dt = new Date(y, m, e.d);
-      const dayName = days[dt.getDay()];
-      const isToday = e.key === todayKey;
-      const chips = [
-        e.cash > 0 ? `<span class="day-breakdown-chip cash">💴¥${e.cash.toLocaleString()}</span>` : '',
-        e.card > 0 ? `<span class="day-breakdown-chip card">💳¥${e.card.toLocaleString()}</span>` : '',
-        e.qr   > 0 ? `<span class="day-breakdown-chip qr">📱¥${e.qr.toLocaleString()}</span>`   : '',
-      ].filter(Boolean).join('');
-      return `<div class="day-row ${isToday?'today':''}">
-        <div class="day-date">${m+1}/${e.d} (${dayName})</div>
-        <div class="day-amount">¥${e.amount.toLocaleString()}</div>
-        ${chips ? `<div class="day-breakdown">${chips}</div>` : ''}
-        <div class="day-memo">${e.memo}</div>
-        <button class="day-edit-btn" onclick="openEditSale('${e.key}')">編集</button>
-      </div>`;
-    }).join('');
+  // Daily list
+  if (entries.length === 0) {
+    document.getElementById('daily-list').innerHTML = `<div class="no-sales-row">この月の売上データはありません</div>`;
+    return;
   }
+
+  document.getElementById('daily-list').innerHTML = entries.map(e => {
+    const sqBadge = e.sqRec ? `<span class="day-breakdown-chip" style="background:#e8f0fe;color:#4a90d9">■ Square ¥${e.sqRec.total.toLocaleString()}</span>` : '';
+    const manBadge = e.manualAmt > 0 ? `<span class="day-breakdown-chip cash">＋手入力 ¥${e.manualAmt.toLocaleString()}</span>` : '';
+    const topItems = e.sqRec ? (e.sqRec.items || []).slice(0, 3).map(i => i.name).join('・') : '';
+
+    return `<div class="day-row ${e.isToday ? 'today' : ''}">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div class="day-date">${m+1}/${e.d}(${e.dayName})</div>
+        <div class="day-amount">¥${e.dayTotal.toLocaleString()}</div>
+        ${sqBadge}${manBadge}
+        <button class="day-edit-btn" onclick="openEditSale('${e.key}')">＋手入力</button>
+      </div>
+      ${topItems ? `<div style="font-size:11px;color:var(--text-dim);margin-top:4px;padding-left:2px">${topItems}</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 // ===== SALE MODAL =====
@@ -4551,6 +4536,64 @@ function selectManualMergeTarget(targetId) {
   manualMergeSourceId = null;
 }
 // ===== SQUARE CSV IMPORT =====
+
+// Import customer order history from Square CSV
+function importSquareCustomerHistory(rows, headers) {
+  const dateCol    = headers.indexOf('日付');
+  const itemCol    = headers.indexOf('商品');
+  const amtCol     = headers.indexOf('純売上高');
+  const custCol    = headers.indexOf('顧客名');
+  const orderIdCol = headers.indexOf('支払いID');
+  if (custCol < 0) return 0;
+
+  // Group by customer + date + orderId → visit
+  const visitMap = {}; // custName -> { date -> {items, total, orderId} }
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i].split('\t');
+    if (row.length <= custCol) continue;
+    const custName = (row[custCol] || '').trim();
+    if (!custName) continue;
+    const date = (row[dateCol] || '').trim();
+    const item = (row[itemCol] || '').trim();
+    const amtStr = (row[amtCol] || '').replace(/¥/g,'').replace(/,/g,'').trim();
+    const amt = parseFloat(amtStr) || 0;
+
+    if (!visitMap[custName]) visitMap[custName] = {};
+    if (!visitMap[custName][date]) visitMap[custName][date] = { items: [], total: 0 };
+    if (item) visitMap[custName][date].items.push(item);
+    visitMap[custName][date].total += amt;
+  }
+
+  // Match to existing customers by name
+  let matched = 0;
+  for (const [custName, dateMap] of Object.entries(visitMap)) {
+    // Find best matching customer
+    const cust = customers.find(c => c.name === custName) ||
+                 customers.find(c => c.name.includes(custName) || custName.includes(c.name.split(' ')[0]));
+    if (!cust) continue;
+
+    // Merge visits (skip duplicates by date)
+    const existingDates = new Set((cust.visits || []).map(v => v.date));
+    let added = 0;
+    for (const [date, v] of Object.entries(dateMap)) {
+      if (!existingDates.has(date)) {
+        if (!cust.visits) cust.visits = [];
+        cust.visits.push({ date, items: v.items, total: Math.round(v.total) });
+        added++;
+      }
+    }
+    if (added > 0) {
+      cust.visits.sort((a, b) => b.date > a.date ? 1 : -1);
+      matched++;
+    }
+  }
+
+  if (matched > 0) {
+    saveCustomers(customers);
+  }
+  return matched;
+}
+
 function importSquareCSV(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -4638,8 +4681,11 @@ function importSquareCSV(event) {
       squareSalesData = { ...squareSalesData, ...processed };
       saveSquareSales();
 
+      // Also import customer order history
+      const custMatched = importSquareCustomerHistory(lines, headers);
+
       event.target.value = '';
-      showToast(`✅ Square取込完了 — ${dayCount}日分 / ${rowCount}行`);
+      showToast(`✅ Square取込完了 — ${dayCount}日分 / 顧客履歴${custMatched}名に反映`);
       renderAccounting();
 
       // Also refresh analytics if active
