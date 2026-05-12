@@ -1921,6 +1921,10 @@
             <button class="nav-arrow" onclick="acctChangeMonth(1)">›</button>
           </div>
           <button class="add-sale-btn" onclick="openAcctDayModal(null)" style="margin-left:auto">＋ 今日の経費入力</button>
+          <label class="add-sale-btn" style="cursor:pointer;background:var(--surface2);border-color:var(--amber-dim)">
+            📊 Square取込
+            <input type="file" accept=".csv,.tsv,text/csv" style="display:none" onchange="importSquareCSV(event)">
+          </label>
         </div>
         <div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px">
 
@@ -3905,6 +3909,66 @@ function renderAnalytics() {
     </div>`;
   }).join('') || '<div style="color:var(--text-dim);font-size:13px">データがありません</div>';
 
+  // ── Square 商品ランキング（全期間） ──
+  const sqAllItems = {};
+  const sqAllCats  = {};
+  let sqTotalRevenue = 0;
+  for (const [date, d] of Object.entries(squareSalesData)) {
+    sqTotalRevenue += d.total || 0;
+    for (const it of (d.items || [])) {
+      if (!sqAllItems[it.name]) sqAllItems[it.name] = { qty: 0, revenue: 0, cat: it.cat };
+      sqAllItems[it.name].qty     += it.qty;
+      sqAllItems[it.name].revenue += it.revenue;
+    }
+    for (const [cat, amt] of Object.entries(d.cats || {})) {
+      sqAllCats[cat] = (sqAllCats[cat] || 0) + amt;
+    }
+  }
+  const sqItemRanked = Object.entries(sqAllItems).sort((a, b) => b[1].qty - a[1].qty).slice(0, 20);
+  const sqMaxQty = sqItemRanked[0]?.[1].qty || 1;
+  const sqItemHtml = sqItemRanked.length > 0
+    ? sqItemRanked.map(([name, d], i) => {
+        const barPct = Math.round(d.qty / sqMaxQty * 100);
+        const unitPrice = d.qty > 0 ? Math.round(d.revenue / d.qty) : 0;
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);width:18px;text-align:right">${i+1}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:13px;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%">${name}</span>
+              <span style="font-size:11px;color:var(--text-dim);flex-shrink:0">${d.qty.toFixed(0)}杯 · ¥${d.revenue.toLocaleString()} (単価¥${unitPrice.toLocaleString()})</span>
+            </div>
+            <div style="height:5px;background:var(--bg);border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${barPct}%;background:var(--amber);border-radius:3px;opacity:0.8"></div>
+            </div>
+          </div>
+        </div>`;
+      }).join('')
+    : '<div style="color:var(--text-dim);font-size:13px">Squareデータを取り込むと表示されます</div>';
+
+  // ── カテゴリ別売上 ──
+  const sqCatRanked = Object.entries(sqAllCats).sort((a, b) => b[1] - a[1]);
+  const sqMaxCat = sqCatRanked[0]?.[1] || 1;
+  const sqCatHtml = sqCatRanked.length > 0
+    ? sqCatRanked.map(([cat, amt]) => {
+        const pct = Math.round(amt / sqTotalRevenue * 100);
+        const barPct = Math.round(amt / sqMaxCat * 100);
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="width:90px;font-size:12px;color:var(--cream);flex-shrink:0">${cat}</div>
+          <div style="flex:1">
+            <div style="height:16px;background:var(--bg);border-radius:4px;overflow:hidden">
+              <div style="height:100%;width:${barPct}%;background:#4a90d9;opacity:0.7;border-radius:4px"></div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text-dim);width:110px;text-align:right;flex-shrink:0">¥${amt.toLocaleString()} (${pct}%)</div>
+        </div>`;
+      }).join('')
+    : '<div style="color:var(--text-dim);font-size:13px">Squareデータを取り込むと表示されます</div>';
+
+  const sqDataCount = Object.keys(squareSalesData).length;
+  const sqInfoHtml = sqDataCount > 0
+    ? `<div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">${sqDataCount}日分のデータ · 総売上 ¥${sqTotalRevenue.toLocaleString()} <button onclick="clearSquareData()" style="margin-left:8px;padding:2px 8px;border:1px solid #e0505044;border-radius:4px;background:transparent;color:#e05050;font-size:11px;cursor:pointer">データ削除</button></div>`
+    : `<div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">経理タブの「Square取込」ボタンからCSVを読み込んでください</div>`;
+
   body.innerHTML = `
     <div>
       <div class="analytics-section-title">🎧 DJ / イベント別</div>
@@ -3921,7 +3985,16 @@ function renderAnalytics() {
       </div>
     </div>
     <div>
-      <div class="analytics-section-title">🍺 商品ランキング（杯数）</div>
+      <div class="analytics-section-title">🍺 商品ランキング（杯数・Square実績）</div>
+      ${sqInfoHtml}
+      ${sqItemHtml}
+    </div>
+    <div>
+      <div class="analytics-section-title">📊 カテゴリ別売上（Square実績）</div>
+      ${sqCatHtml}
+    </div>
+    <div>
+      <div class="analytics-section-title">🍺 レジ記録 商品ランキング</div>
       ${itemHtml}
     </div>
     <div>
@@ -4233,6 +4306,118 @@ function selectManualMergeTarget(targetId) {
   // We override the post-merge behavior via a flag
   manualMergeSourceId = null;
 }
+// ===== SQUARE CSV IMPORT =====
+function importSquareCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      // Detect encoding (Square exports UTF-16 LE with BOM)
+      const raw = e.target.result;
+      let text;
+      // FileReader as text may handle encoding; try parsing directly
+      text = raw;
+
+      // Parse TSV (Square uses tab-delimited)
+      const lines = text.split('\n');
+      if (lines.length < 2) { showToast('データが読み取れませんでした'); return; }
+
+      // Find header row
+      const headers = lines[0].replace(/^\uFEFF/, '').split('\t');
+      const col = (name) => headers.indexOf(name);
+
+      const dateCol    = col('日付');
+      const catCol     = col('カテゴリ');
+      const itemCol    = col('商品');
+      const qtyCol     = col('数量');
+      const amtCol     = col('純売上高');
+      const tokenCol   = col('トークン');
+
+      if (dateCol < 0 || itemCol < 0 || amtCol < 0) {
+        showToast('Square詳細CSVではないようです');
+        return;
+      }
+
+      // Aggregate by date
+      const daily = {};
+      let rowCount = 0;
+
+      for (let i = 1; i < lines.length; i++) {
+        const row = lines[i].split('\t');
+        if (row.length < amtCol + 1) continue;
+        const date = (row[dateCol] || '').trim();
+        if (!date || date === '日付') continue;
+
+        const amtStr = (row[amtCol] || '').replace(/¥/g, '').replace(/,/g, '').trim();
+        const amt = parseFloat(amtStr) || 0;
+        const qty = parseFloat(row[qtyCol] || '1') || 1;
+        const item = (row[itemCol] || '').trim();
+        const cat  = (row[catCol]  || 'その他').trim();
+        const isCard = !!(row[tokenCol] || '').trim();
+
+        if (!daily[date]) daily[date] = { total: 0, card: 0, cash: 0, items: {}, cats: {} };
+
+        daily[date].total += amt;
+        if (isCard) daily[date].card += amt;
+        else daily[date].cash += amt;
+
+        if (item) {
+          if (!daily[date].items[item]) daily[date].items[item] = { qty: 0, revenue: 0, cat };
+          daily[date].items[item].qty     += qty;
+          daily[date].items[item].revenue += amt;
+        }
+        if (cat) {
+          daily[date].cats[cat] = (daily[date].cats[cat] || 0) + amt;
+        }
+        rowCount++;
+      }
+
+      // Convert items object to array
+      const processed = {};
+      for (const [date, d] of Object.entries(daily)) {
+        processed[date] = {
+          total: d.total,
+          card:  d.card,
+          cash:  d.cash,
+          cats:  d.cats,
+          items: Object.entries(d.items)
+            .map(([name, v]) => ({ name, qty: v.qty, revenue: v.revenue, cat: v.cat }))
+            .sort((a, b) => b.qty - a.qty),
+        };
+      }
+
+      const dayCount = Object.keys(processed).length;
+      if (dayCount === 0) { showToast('有効なデータがありませんでした'); return; }
+
+      // Merge with existing (newer import wins per date)
+      squareSalesData = { ...squareSalesData, ...processed };
+      saveSquareSales();
+
+      event.target.value = '';
+      showToast(`✅ Square取込完了 — ${dayCount}日分 / ${rowCount}行`);
+      renderAccounting();
+
+      // Also refresh analytics if active
+      if (currentMgmtTab === 'analytics') renderAnalytics();
+
+    } catch (err) {
+      showToast('読み込みに失敗: ' + err.message);
+      event.target.value = '';
+    }
+  };
+  // Read as UTF-16 if needed — try text first
+  reader.readAsText(file, 'UTF-16LE');
+}
+
+function clearSquareData() {
+  if (!confirm('取り込んだSquareデータをすべて削除しますか？')) return;
+  squareSalesData = {};
+  saveSquareSales();
+  renderAccounting();
+  showToast('Squareデータを削除しました');
+}
+
 function exportBackup() {
   const data = {
     version: 1,
@@ -4342,6 +4527,7 @@ function selectAnalyticsPeriod(p) {
 const DB_STAFF = 'mhz_staff';
 const DB_ACCT  = 'mhz_acct';
 const DB_GOALS = 'mhz_goals';
+const DB_SQUARE_SALES = 'mhz_square_sales';
 
 function loadStaff() {
   try {
@@ -4368,9 +4554,15 @@ function loadGoals() {
 }
 function saveGoals() { localStorage.setItem(DB_GOALS, JSON.stringify(goalSettings)); }
 
+function loadSquareSales() {
+  try { return JSON.parse(localStorage.getItem(DB_SQUARE_SALES)) || {}; } catch { return {}; }
+}
+function saveSquareSales() { localStorage.setItem(DB_SQUARE_SALES, JSON.stringify(squareSalesData)); }
+
 let staffList = loadStaff();
-let acctData  = loadAcct();   // { 'YYYY-MM-DD': { title, guests, mega, charge, rental, sidejob, d1, night, pay, staffHours:{id:hrs}, expenses:{key:val} } }
+let acctData  = loadAcct();
 let goalSettings = loadGoals();
+let squareSalesData = loadSquareSales(); // { 'YYYY-MM-DD': { total, items:[{name,qty,revenue,cat}], cats:{cat:amt} } }
 let acctMonth = new Date();
 
 const EXPENSE_ITEMS = [
@@ -4464,11 +4656,14 @@ function renderAccounting() {
     const regRec = sales[key];   // レジデータ
     const acctRec = acctData[key] || {};
 
-    // Revenue: prefer レジ actual if available, else acctRec total
+    // Revenue: Square CSV data + manual extras
+    const sqRec = squareSalesData[key];
+    const squareRevenue = sqRec ? sqRec.total : 0;
     const regRevenue = regRec ? (regRec.amount || 0) : 0;
     const manualRevenue = ['mega','charge','rental','sidejob','d1','night','pay']
       .reduce((s, k) => s + (parseInt(acctRec[k]) || 0), 0);
-    const dayRevenue = regRevenue || manualRevenue;
+    // Square data is primary; レジ/手入力 is fallback if no square data
+    const dayRevenue = squareRevenue + manualRevenue || regRevenue;
 
     // Labor cost
     const staffHours = acctRec.staffHours || {};
@@ -4492,7 +4687,7 @@ function renderAccounting() {
     const isToday = toDateKey(new Date()) === key;
     const profit = dayRevenue - laborCost - expTotal;
 
-    rows.push({ key, d, dow: days[dayOfWeek], isToday, dayRevenue, laborCost, expTotal, profit, title: acctRec.title || '', regLinked: regRevenue > 0 });
+    rows.push({ key, d, dow: days[dayOfWeek], isToday, dayRevenue, squareRevenue, manualRevenue, laborCost, expTotal, profit, title: acctRec.title || '', regLinked: regRevenue > 0, sqLinked: squareRevenue > 0 });
   }
 
   // ── 月次サマリー ──
@@ -4557,8 +4752,15 @@ function renderAccounting() {
          onclick="openAcctDayModal('${r.key}')">
       <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--text-dim);min-width:80px">${r.d}日(${r.dow})</div>
       <div style="flex:1">
-        <div style="font-size:13px;color:var(--cream)">${r.title || '—'} ${r.regLinked ? '<span style="font-size:10px;color:var(--amber);border:1px solid var(--amber-dim);border-radius:4px;padding:1px 5px;margin-left:4px">レジ連動</span>' : ''}</div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:2px">売上 ¥${r.dayRevenue.toLocaleString()} / 人件費 ¥${r.laborCost.toLocaleString()} / 経費 ¥${r.expTotal.toLocaleString()}</div>
+        <div style="font-size:13px;color:var(--cream)">${r.title || '—'}
+          ${r.sqLinked ? '<span style="font-size:10px;color:#4a90d9;border:1px solid #4a90d944;border-radius:4px;padding:1px 5px;margin-left:4px">■ Square</span>' : ''}
+          ${r.regLinked ? '<span style="font-size:10px;color:var(--amber);border:1px solid var(--amber-dim);border-radius:4px;padding:1px 5px;margin-left:4px">レジ連動</span>' : ''}
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:2px">
+          売上 ¥${r.dayRevenue.toLocaleString()}
+          ${r.sqLinked && r.manualRevenue > 0 ? `<span style="color:var(--text-dim)">(Square ¥${r.squareRevenue.toLocaleString()} + 手入力 ¥${r.manualRevenue.toLocaleString()})</span>` : ''}
+          / 人件費 ¥${r.laborCost.toLocaleString()} / 経費 ¥${r.expTotal.toLocaleString()}
+        </div>
       </div>
       <div style="font-family:'Space Mono',monospace;font-size:13px;color:${r.profit>=0?'var(--green)':'#e05050'};text-align:right">
         ${r.profit>=0?'+':''}¥${r.profit.toLocaleString()}
@@ -4578,11 +4780,20 @@ function openAcctDayModal(dateKey) {
 
   // Show linked register data if exists
   const regRec = sales[editingAcctKey];
+  const sqRec  = squareSalesData[editingAcctKey];
   const infoEl = document.getElementById('acct-day-register-info');
+  let infoLines = [];
+  if (sqRec) {
+    const topItems = (sqRec.items || []).slice(0, 5).map(it => `${it.name}×${it.qty.toFixed(0)}`).join(' · ');
+    infoLines.push(`■ Square売上: <span style="color:#4a90d9">¥${sqRec.total.toLocaleString()}</span>　<span style="color:var(--text-dim);font-size:10px">${topItems}</span>`);
+  }
   if (regRec && regRec.amount > 0) {
-    infoEl.innerHTML = `📊 レジ売上: <span style="color:var(--amber)">¥${regRec.amount.toLocaleString()}</span>（現金 ¥${(regRec.cash||0).toLocaleString()} / カード ¥${(regRec.card||0).toLocaleString()} / QR ¥${(regRec.qr||0).toLocaleString()}）`;
+    infoLines.push(`📊 レジ売上: <span style="color:var(--amber)">¥${regRec.amount.toLocaleString()}</span>（現金 ¥${(regRec.cash||0).toLocaleString()} / カード ¥${(regRec.card||0).toLocaleString()} / QR ¥${(regRec.qr||0).toLocaleString()}）`);
+  }
+  if (infoLines.length === 0) {
+    infoEl.innerHTML = '<span style="color:var(--text-dim)">Squareデータ・レジデータなし（手動入力）</span>';
   } else {
-    infoEl.innerHTML = '<span style="color:var(--text-dim)">レジデータなし（手動入力）</span>';
+    infoEl.innerHTML = infoLines.join('<br>');
   }
 
   const rec = acctData[editingAcctKey] || {};
