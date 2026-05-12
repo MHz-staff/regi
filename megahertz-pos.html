@@ -1753,6 +1753,7 @@
     <div class="menu-panel">
       <div class="register-toolbar">
         <div class="category-bar" id="category-bar"></div>
+        <button class="edit-sort-btn" onclick="openItemSearchModal()" style="margin-right:4px">🔍</button>
         <button class="edit-sort-btn" id="edit-sort-btn" onclick="toggleEditMode()">並び替え</button>
       </div>
       <div class="item-grid" id="item-grid"></div>
@@ -2060,6 +2061,33 @@
     <div class="variant-grid" id="variant-grid"></div>
     <div class="modal-actions" style="margin-top:14px">
       <button class="modal-cancel" style="width:100%" onclick="closeVariantModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM SEARCH MODAL -->
+<div class="modal-overlay" id="item-search-modal">
+  <div class="modal" style="max-width:420px;max-height:85dvh;display:flex;flex-direction:column">
+    <div class="modal-title">商品を検索</div>
+    <input type="text" id="item-search-input" placeholder="商品名で検索…" autocomplete="off"
+      oninput="renderItemSearchResults()"
+      style="width:100%;box-sizing:border-box;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;font-family:'Noto Sans JP',sans-serif;margin-bottom:12px">
+    <div id="item-search-results" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="modal-cancel" style="width:100%" onclick="closeItemSearchModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- RENAME TICKET MODAL -->
+<div class="modal-overlay" id="rename-ticket-modal">
+  <div class="modal" style="max-width:320px">
+    <div class="modal-title">伝票名を変更</div>
+    <input type="text" id="rename-ticket-input" placeholder="伝票名"
+      style="width:100%;box-sizing:border-box;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;font-family:'Noto Sans JP',sans-serif;margin-bottom:14px">
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeRenameTicketModal()">キャンセル</button>
+      <button class="modal-confirm" style="flex:1" onclick="confirmRenameTicket()">変更</button>
     </div>
   </div>
 </div>
@@ -2511,6 +2539,88 @@ function closeVariantModal() {
   document.getElementById('variant-modal').classList.remove('open');
 }
 
+// ===== ITEM SEARCH =====
+function openItemSearchModal() {
+  document.getElementById('item-search-input').value = '';
+  renderItemSearchResults();
+  document.getElementById('item-search-modal').classList.add('open');
+  setTimeout(() => document.getElementById('item-search-input').focus(), 100);
+}
+
+function closeItemSearchModal() {
+  document.getElementById('item-search-modal').classList.remove('open');
+}
+
+function renderItemSearchResults() {
+  const q = document.getElementById('item-search-input').value.trim().toLowerCase();
+  const filtered = q
+    ? items.filter(i => i.name.toLowerCase().includes(q) || (i.category||'').toLowerCase().includes(q))
+    : items;
+  const el = document.getElementById('item-search-results');
+  if (filtered.length === 0) {
+    el.innerHTML = '<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px">見つかりません</div>';
+    return;
+  }
+  el.innerHTML = filtered.map(item => {
+    const hasVar = item.variants && item.variants.length > 0;
+    const priceLabel = hasVar
+      ? `¥${item.variants.map(v=>v.price).sort((a,b)=>a-b)[0].toLocaleString()}〜`
+      : `¥${item.price.toLocaleString()}`;
+    return `<div style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer;active:opacity:0.7"
+      onclick="${hasVar ? `closeItemSearchModal();openVariantModal(${item.id})` : `addToCart(${item.id},null,null);closeItemSearchModal()`}">
+      <div style="flex:1">
+        <div style="font-size:14px;color:var(--cream)">${item.name}</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:2px">${item.category}</div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:13px;color:var(--amber)">${priceLabel}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== TICKET RENAME =====
+let renamingTicketId = null;
+
+function openRenameTicketModal(id) {
+  const ticket = tickets.find(t => t.id === id);
+  if (!ticket) return;
+  renamingTicketId = id;
+  document.getElementById('rename-ticket-input').value = ticket.name;
+  document.getElementById('rename-ticket-modal').classList.add('open');
+  setTimeout(() => document.getElementById('rename-ticket-input').focus(), 100);
+}
+
+function closeRenameTicketModal() {
+  document.getElementById('rename-ticket-modal').classList.remove('open');
+  renamingTicketId = null;
+}
+
+function confirmRenameTicket() {
+  const ticket = tickets.find(t => t.id === renamingTicketId);
+  if (!ticket) return;
+  const name = document.getElementById('rename-ticket-input').value.trim();
+  if (!name) return;
+  ticket.name = name;
+  saveTickets();
+  renderTicketBar();
+  closeRenameTicketModal();
+  showToast(`伝票名を「${name}」に変更しました`);
+}
+
+let ticketLongPressTimer = null;
+let ticketLongPressId = null;
+
+function ticketTabTouchStart(e, id) {
+  ticketLongPressId = id;
+  ticketLongPressTimer = setTimeout(() => {
+    e.preventDefault();
+    openRenameTicketModal(id);
+  }, 600);
+}
+
+function ticketTabTouchEnd(e) {
+  clearTimeout(ticketLongPressTimer);
+}
+
 function addToCart(id, variantName, variantPrice) {
   const item = items.find(i => i.id === id);
   if (!item) return;
@@ -2921,7 +3031,10 @@ function renderTicketBar() {
   tabsEl.innerHTML = tickets.map(t => {
     const total = Object.values(t.cart).reduce((s, e) => s + e.price * e.qty, 0);
     const isActive = t.id === activeTicketId;
-    return `<div class="ticket-tab ${isActive ? 'active' : ''}" onclick="switchTicket(${t.id})">
+    return `<div class="ticket-tab ${isActive ? 'active' : ''}" onclick="switchTicket(${t.id})"
+      ondblclick="openRenameTicketModal(${t.id})"
+      ontouchstart="ticketTabTouchStart(event,${t.id})"
+      ontouchend="ticketTabTouchEnd(event)">
       <span>${t.name}</span>
       ${total > 0 ? `<span class="ticket-tab-total">¥${total.toLocaleString()}</span>` : ''}
       <span class="ticket-tab-close" onclick="event.stopPropagation();deleteTicket(${t.id})">×</span>
