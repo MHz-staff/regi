@@ -4255,29 +4255,51 @@ function renderAnalytics() {
   const txns = getAnalyticsTransactions();
   const body = document.getElementById('mgmt-tab-analytics');
 
-  // ── DJ ranking ──
-  const djMap = {};
-  for (const tx of txns) {
-    const name = tx.dj || '（未記録）';
-    if (!djMap[name]) djMap[name] = { sales: 0, guests: 0, count: 0 };
-    djMap[name].sales += tx.total;
-    djMap[name].guests += tx.guests || 0;
-    djMap[name].count++;
+  // ── イベント別売上（日単位で集計） ──
+  // sales[date].transactions に dj フィールドがある
+  const eventMap = {}; // eventName -> { sales, guests, txCount, dates: Set, items: {} }
+  for (const [dateKey, dayRec] of Object.entries(sales)) {
+    const txList = dayRec.transactions || [];
+    // この日のメインDJ/イベントを特定（最多出現 or 最初）
+    const djNames = txList.map(t => t.dj).filter(Boolean);
+    const mainDj = djNames.length > 0
+      ? djNames.sort((a, b) => djNames.filter(x => x===b).length - djNames.filter(x => x===a).length)[0]
+      : null;
+
+    for (const tx of txList) {
+      const name = tx.dj || mainDj || '（未記録）';
+      if (!eventMap[name]) eventMap[name] = { sales: 0, guests: 0, txCount: 0, dates: new Set(), items: {} };
+      eventMap[name].sales += tx.total;
+      eventMap[name].guests += tx.guests || 0;
+      eventMap[name].txCount++;
+      eventMap[name].dates.add(dateKey);
+      for (const item of (tx.items || [])) {
+        eventMap[name].items[item.name] = (eventMap[name].items[item.name] || 0) + item.qty;
+      }
+    }
   }
-  const djRanked = Object.entries(djMap).sort((a,b) => b[1].sales - a[1].sales);
+
+  const eventRanked = Object.entries(eventMap).sort((a, b) => b[1].sales - a[1].sales);
   const rankNums = ['🥇','🥈','🥉'];
   const rankClasses = ['gold','silver','bronze'];
-  const djHtml = djRanked.map(([name, d], i) => {
-    const unitPrice = d.guests > 0 ? Math.round(d.sales / d.guests) : '—';
-    return `<div class="dj-rank-row">
-      <div class="dj-rank-num ${rankClasses[i] || ''}">${i < 3 ? rankNums[i] : (i+1)}</div>
-      <div class="dj-rank-name">${name}</div>
-      <div class="dj-rank-stats">
+
+  const djHtml = eventRanked.length > 0 ? eventRanked.map(([name, d], i) => {
+    const dayCount = d.dates.size;
+    const avgPerDay = dayCount > 0 ? Math.round(d.sales / dayCount) : 0;
+    const unitPrice = d.guests > 0 ? Math.round(d.sales / d.guests) : 0;
+    const topItems = Object.entries(d.items).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n]) => n).join('・');
+    return `<div class="dj-rank-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <div style="display:flex;align-items:center;gap:8px;width:100%">
+        <div class="dj-rank-num ${rankClasses[i] || ''}">${i < 3 ? rankNums[i] : (i+1)}</div>
+        <div class="dj-rank-name" style="flex:1">${name}</div>
         <div class="dj-rank-sales">¥${d.sales.toLocaleString()}</div>
-        <div class="dj-rank-sub">${d.guests}名 / 単価${unitPrice !== '—' ? '¥'+unitPrice.toLocaleString() : '—'}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);padding-left:32px">
+        ${dayCount}日開催 · 日平均¥${avgPerDay.toLocaleString()} · ${d.guests}名 · 客単価${unitPrice ? '¥'+unitPrice.toLocaleString() : '—'}
+        ${topItems ? `<br>よく出る: ${topItems}` : ''}
       </div>
     </div>`;
-  }).join('') || '<div style="color:var(--text-dim);font-size:13px">データがありません</div>';
+  }).join('') : '<div style="color:var(--text-dim);font-size:13px">会計時にDJ/イベント名を入力するとここに集計されます</div>';
 
   // ── 曜日別 ──
   const wdays = ['日','月','火','水','木','金','土'];
