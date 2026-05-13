@@ -1767,6 +1767,15 @@
         <button class="ticket-new-btn" onclick="openNewTicketModal()" title="新規伝票">＋</button>
       </div>
       <div class="cart-header" id="cart-header-label">ORDER</div>
+      <div id="cart-cust-hint" style="display:none;margin:0 0 6px 0;padding:8px 10px;background:#fffbf0;border:1px solid #f0d080;border-radius:8px;font-size:12px;cursor:pointer" onclick="toggleCustHintDetail()">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span id="cart-cust-hint-name" style="font-weight:600;color:#1a1a1a"></span>
+          <span id="cart-cust-hint-toggle" style="color:#888;font-size:11px">▼ 詳細</span>
+        </div>
+        <div id="cart-cust-hint-last" style="color:#555;margin-top:3px"></div>
+        <div id="cart-cust-hint-rec" style="color:#d4780a;margin-top:3px"></div>
+        <div id="cart-cust-hint-detail" style="display:none;margin-top:8px;border-top:1px solid #f0d080;padding-top:8px"></div>
+      </div>
       <div class="cart-items" id="cart-items">
         <div class="empty-state" id="cart-empty">商品を選択してください</div>
       </div>
@@ -3067,6 +3076,8 @@ function switchTicket(id) {
   activeTicketId = id;
   renderTicketBar();
   renderCart();
+  const t = tickets.find(t => t.id === id);
+  showCartCustHint(t && t.customerId ? t.customerId : null);
 }
 
 function deleteTicket(id) {
@@ -3106,12 +3117,24 @@ function createTicket() {
   const manualName = document.getElementById('ticket-name-input').value.trim();
   const name = custName || manualName || `伝票${tickets.length + 1}`;
   const newTicket = { id: Date.now(), name, cart: {} };
+
+  // Link customer ID if selected
+  const pendingId = window._pendingCustHint;
+  if (pendingId) {
+    newTicket.customerId = pendingId;
+    window._pendingCustHint = null;
+  } else if (custName) {
+    const c = customers.find(x => x.name === custName);
+    if (c) newTicket.customerId = c.id;
+  }
+
   tickets.push(newTicket);
   activeTicketId = newTicket.id;
   saveTickets();
   closeNewTicketModal();
   renderTicketBar();
   renderCart();
+  showCartCustHint(newTicket.customerId || null);
 }
 
 // ===== REGISTER EDIT MODE =====
@@ -3822,9 +3845,68 @@ function selectTicketCustomer(name, isExisting) {
     const visits = c ? (c.visits || []).length : 0;
     const total = c ? (c.visits || []).reduce((s, v) => s + v.total, 0) : 0;
     sel.textContent = `${visits}回来店 / 累計¥${total.toLocaleString()}`;
+    // Store for cart hint after ticket is created
+    window._pendingCustHint = c ? c.id : null;
   } else {
     sel.textContent = '新規顧客として登録';
+    window._pendingCustHint = null;
   }
+}
+
+function showCartCustHint(custId) {
+  const el = document.getElementById('cart-cust-hint');
+  if (!custId) { el.style.display = 'none'; return; }
+  const c = customers.find(x => x.id === custId);
+  if (!c) { el.style.display = 'none'; return; }
+
+  const allVisits = [...(c.visits || [])].sort((a, b) => b.date > a.date ? 1 : -1);
+
+  // Last order
+  const last = allVisits[0];
+  let lastText = '';
+  if (last) {
+    const dateLabel = last.date ? last.date.slice(5).replace('-', '/') : '';
+    const itemNames = (last.items || []).map(i => typeof i === 'string' ? i : i.name).filter(Boolean);
+    lastText = `前回 ${dateLabel}：${itemNames.slice(0, 4).join('・') || '記録なし'}`;
+  }
+
+  // Recommendations
+  const freq = {};
+  for (const v of allVisits) {
+    for (const item of (v.items || [])) {
+      const n = typeof item === 'string' ? item : item.name;
+      if (n) freq[n] = (freq[n] || 0) + 1;
+    }
+  }
+  const top = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const recText = top.length > 0 ? `⭐ ${top.map(([n]) => n).join('・')}` : '';
+
+  // Detail section (all visits)
+  const detailHtml = allVisits.slice(0, 5).map(v => {
+    const itemNames = (v.items || []).map(i => typeof i === 'string' ? i : i.name).filter(Boolean);
+    const total = v.total ? `¥${v.total.toLocaleString()}` : '';
+    return `<div style="padding:4px 0;border-bottom:1px solid #f0d080;font-size:11px">
+      <span style="color:#888">${v.date || ''}</span>
+      <span style="color:#d4780a;margin-left:6px">${total}</span>
+      <div style="color:#333;margin-top:2px">${itemNames.join('・') || '記録なし'}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('cart-cust-hint-name').textContent = c.name;
+  document.getElementById('cart-cust-hint-last').textContent = lastText;
+  document.getElementById('cart-cust-hint-rec').textContent = recText;
+  document.getElementById('cart-cust-hint-detail').innerHTML = detailHtml || '<div style="color:#888;font-size:11px">履歴なし</div>';
+  document.getElementById('cart-cust-hint-detail').style.display = 'none';
+  document.getElementById('cart-cust-hint-toggle').textContent = '▼ 詳細';
+  el.style.display = 'block';
+}
+
+function toggleCustHintDetail() {
+  const det = document.getElementById('cart-cust-hint-detail');
+  const tog = document.getElementById('cart-cust-hint-toggle');
+  const isOpen = det.style.display !== 'none';
+  det.style.display = isOpen ? 'none' : 'block';
+  tog.textContent = isOpen ? '▼ 詳細' : '▲ 閉じる';
 }
 
 function onChargeCustInput() {
