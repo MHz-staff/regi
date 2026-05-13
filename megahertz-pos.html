@@ -218,12 +218,65 @@
 
   .cart-item {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 4px;
     padding: 8px;
     border-radius: 6px;
     margin-bottom: 4px;
     background: var(--bg);
+  }
+
+  .cart-item-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .disc-btn {
+    font-size: 11px;
+    padding: 2px 7px;
+    border: 1px solid #d4780a;
+    border-radius: 4px;
+    background: transparent;
+    color: #d4780a;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .disc-badge {
+    font-size: 11px;
+    color: var(--red);
+    background: #fff0f0;
+    border: 1px solid #ffcccc;
+    border-radius: 4px;
+    padding: 1px 6px;
+    cursor: pointer;
+  }
+
+  .disc-panel {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 0 0 0;
+  }
+
+  .disc-preset {
+    font-size: 12px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .disc-preset:active { background: var(--surface2); }
+
+  .disc-custom-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-top: 2px;
   }
 
   .cart-item-name {
@@ -1782,7 +1835,10 @@
       <div class="cart-footer">
         <div class="total-row">
           <div class="total-label">TOTAL</div>
-          <div class="total-amount" id="total-display">¥0</div>
+          <div style="display:flex;align-items:baseline;gap:10px;margin-left:auto">
+            <div id="cart-item-count" style="font-size:12px;color:var(--text-dim);font-family:'Space Mono',monospace"></div>
+            <div class="total-amount" id="total-display">¥0</div>
+          </div>
         </div>
         <button class="charge-btn" id="charge-btn" onclick="openChargeModal()" disabled>会計する</button>
         <button class="clear-btn" onclick="clearCart()">クリア</button>
@@ -2682,6 +2738,40 @@ function changeQty(key, delta) {
   renderTicketBar();
 }
 
+function toggleDiscPanel(escapedKey, safeId) {
+  const panel = document.getElementById('dp_' + safeId);
+  if (!panel) return;
+  panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+  panel.style.flexWrap = 'wrap';
+}
+
+function applyDiscPreset(escapedKey, safeId, preset) {
+  const key = escapedKey.replace(/\\\\/g,'\\').replace(/\\'/g,"'");
+  const cart = getActiveCart();
+  if (!cart[key]) return;
+  const basePrice = cart[key].price * cart[key].qty;
+  if (preset === 'half') {
+    cart[key].discount = Math.floor(basePrice / 2);
+  } else {
+    cart[key].discount = Math.min(Number(preset), basePrice);
+  }
+  setActiveCart(cart);
+  saveTickets();
+  renderCart();
+}
+
+function applyDiscCustom(escapedKey, safeId, val) {
+  const key = escapedKey.replace(/\\\\/g,'\\').replace(/\\'/g,"'");
+  const cart = getActiveCart();
+  if (!cart[key]) return;
+  const disc = parseInt(val) || 0;
+  const basePrice = cart[key].price * cart[key].qty;
+  cart[key].discount = Math.min(Math.max(0, disc), basePrice);
+  setActiveCart(cart);
+  saveTickets();
+  renderCart();
+}
+
 function clearCart() {
   setActiveCart({});
   saveTickets();
@@ -2695,6 +2785,7 @@ function renderCart() {
   if (!activeTicketId) {
     cartItemsEl.innerHTML = '<div class="empty-state">＋ ボタンで新しい伝票を作成してください</div>';
     document.getElementById('total-display').textContent = '¥0';
+    document.getElementById('cart-item-count').textContent = '';
     document.getElementById('charge-btn').disabled = true;
     return;
   }
@@ -2705,6 +2796,7 @@ function renderCart() {
   if (keys.length === 0) {
     cartItemsEl.innerHTML = '<div class="empty-state">商品を選択してください</div>';
     document.getElementById('total-display').textContent = '¥0';
+    document.getElementById('cart-item-count').textContent = '';
     document.getElementById('charge-btn').disabled = true;
     return;
   }
@@ -2712,26 +2804,54 @@ function renderCart() {
   let total = 0;
   cartItemsEl.innerHTML = keys.map(key => {
     const entry = cart[key];
-    const sub = entry.price * entry.qty;
+    const basePrice = entry.price * entry.qty;
+    const disc = entry.discount || 0;
+    const sub = Math.max(0, basePrice - disc);
     total += sub;
     const escapedKey = key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<div class="cart-item">
-      <span class="cart-item-name">${entry.name}</span>
-      <div class="cart-qty-ctrl">
-        <button class="qty-btn" onclick="changeQty('${escapedKey}',-1)">−</button>
-        <span class="qty-num">${entry.qty}</span>
-        <button class="qty-btn" onclick="changeQty('${escapedKey}',1)">＋</button>
+    const safeId = key.replace(/[^a-zA-Z0-9]/g,'_');
+    const discBadge = disc > 0
+      ? `<span class="disc-badge" onclick="toggleDiscPanel('${escapedKey}','${safeId}')">−¥${disc.toLocaleString()}</span>`
+      : '';
+    return `<div class="cart-item" id="ci_${safeId}">
+      <div class="cart-item-row">
+        <span class="cart-item-name">${entry.name}</span>
+        <div class="cart-qty-ctrl">
+          <button class="qty-btn" onclick="changeQty('${escapedKey}',-1)">−</button>
+          <span class="qty-num">${entry.qty}</span>
+          <button class="qty-btn" onclick="changeQty('${escapedKey}',1)">＋</button>
+        </div>
+        ${discBadge}
+        <button class="disc-btn" onclick="toggleDiscPanel('${escapedKey}','${safeId}')">割引</button>
+        <span class="cart-item-subtotal">¥${sub.toLocaleString()}</span>
       </div>
-      <span class="cart-item-subtotal">¥${sub.toLocaleString()}</span>
+      <div class="disc-panel" id="dp_${safeId}" style="display:none">
+        <button class="disc-preset" onclick="applyDiscPreset('${escapedKey}','${safeId}','half')">半額</button>
+        <button class="disc-preset" onclick="applyDiscPreset('${escapedKey}','${safeId}',200)">−¥200</button>
+        <button class="disc-preset" onclick="applyDiscPreset('${escapedKey}','${safeId}',100)">−¥100</button>
+        <button class="disc-preset" onclick="applyDiscPreset('${escapedKey}','${safeId}',0)" style="color:var(--text-dim)">割引なし</button>
+        <div class="disc-custom-row">
+          <span style="font-size:12px;color:var(--text-dim)">−¥</span>
+          <input type="number" min="0" placeholder="金額" inputmode="numeric"
+            style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)"
+            onchange="applyDiscCustom('${escapedKey}','${safeId}',this.value)">
+        </div>
+      </div>
     </div>`;
   }).join('');
 
   document.getElementById('total-display').textContent = `¥${total.toLocaleString()}`;
+  const itemCount = Object.values(cart).reduce((s, e) => s + e.qty, 0);
+  document.getElementById('cart-item-count').textContent = `${itemCount}点`;
   document.getElementById('charge-btn').disabled = false;
 }
 
 function getCartTotal() {
-  return Object.values(getActiveCart()).reduce((sum, entry) => sum + entry.price * entry.qty, 0);
+  return Object.values(getActiveCart()).reduce((sum, entry) => {
+    const base = entry.price * entry.qty;
+    const disc = entry.discount || 0;
+    return sum + Math.max(0, base - disc);
+  }, 0);
 }
 
 // ===== CHARGE MODAL =====
@@ -2758,9 +2878,13 @@ function openChargeModal() {
   const djDd = document.getElementById('charge-dj-dropdown');
   if (djDd) djDd.classList.remove('open');
 
-  const lines = Object.values(getActiveCart()).map(entry =>
-    `<div class="modal-item-line"><span>${entry.name} × ${entry.qty}</span><span>¥${(entry.price*entry.qty).toLocaleString()}</span></div>`
-  ).join('');
+  const lines = Object.values(getActiveCart()).map(entry => {
+    const base = entry.price * entry.qty;
+    const disc = entry.discount || 0;
+    const sub = Math.max(0, base - disc);
+    const discLine = disc > 0 ? ` <span style="color:var(--red);font-size:11px">−¥${disc.toLocaleString()}</span>` : '';
+    return `<div class="modal-item-line"><span>${entry.name} × ${entry.qty}${discLine}</span><span>¥${sub.toLocaleString()}</span></div>`;
+  }).join('');
   document.getElementById('modal-items').innerHTML = lines;
   document.getElementById('modal-total').textContent = `¥${total.toLocaleString()}`;
   document.getElementById('charge-modal').classList.add('open');
@@ -2799,12 +2923,13 @@ function confirmCharge() {
   sales[today].guests = (sales[today].guests || 0) + guestCount;
   if (!sales[today].transactions) sales[today].transactions = [];
   sales[today].transactions.push({
+    id: Date.now(),
     time: now.toISOString(),
     total,
     payMethod,
     guests: guestCount,
     dj: djName,
-    items: Object.values(getActiveCart()).map(e => ({name: e.name, qty: e.qty, price: e.price}))
+    items: Object.values(getActiveCart()).map(e => ({name: e.name, qty: e.qty, price: e.price, discount: e.discount || 0}))
   });
   if (djName && !djs.includes(djName)) {
     djs.push(djName);
@@ -2935,6 +3060,26 @@ function renderSales() {
     const manBadge = e.manualAmt > 0 ? `<span class="day-breakdown-chip cash">＋手入力 ¥${e.manualAmt.toLocaleString()}</span>` : '';
     const topItems = e.sqRec ? (e.sqRec.items || []).slice(0, 3).map(i => i.name).join('・') : '';
 
+    // Transactions list
+    const txns = (e.rec.transactions || []);
+    const txnsHtml = txns.length > 0 ? txns.map(tx => {
+      const t = new Date(tx.time);
+      const timeStr = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+      const itemStr = (tx.items || []).slice(0, 4).map(i => `${i.name}×${i.qty}`).join('・');
+      const payIcon = tx.payMethod === 'card' ? '💳' : tx.payMethod === 'qr' ? '📱' : '💴';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:#fff;border:1px solid var(--border);border-radius:6px;font-size:12px">
+        <span style="color:var(--text-dim);font-family:'Space Mono',monospace;flex-shrink:0">${timeStr}</span>
+        <span style="flex:1;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${itemStr || '—'}</span>
+        <span style="font-family:'Space Mono',monospace;color:var(--amber);flex-shrink:0">${payIcon}¥${tx.total.toLocaleString()}</span>
+        <button onclick="deleteTransaction('${e.key}',${tx.id || 0},'${tx.time}')"
+          style="padding:2px 8px;border:1px solid #ffcccc;border-radius:4px;background:transparent;color:var(--red);font-size:11px;cursor:pointer;flex-shrink:0">削除</button>
+      </div>`;
+    }).join('') : '';
+
+    const txSection = txns.length > 0
+      ? `<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px">${txnsHtml}</div>`
+      : '';
+
     return `<div class="day-row ${e.isToday ? 'today' : ''}">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div class="day-date">${m+1}/${e.d}(${e.dayName})</div>
@@ -2943,11 +3088,38 @@ function renderSales() {
         <button class="day-edit-btn" onclick="openEditSale('${e.key}')">＋手入力</button>
       </div>
       ${topItems ? `<div style="font-size:11px;color:var(--text-dim);margin-top:4px;padding-left:2px">${topItems}</div>` : ''}
+      ${txSection}
     </div>`;
   }).join('');
 }
 
 // ===== SALE MODAL =====
+function deleteTransaction(dateKey, txId, txTime) {
+  if (!confirm('この伝票を削除しますか？')) return;
+  const dayRec = sales[dateKey];
+  if (!dayRec || !dayRec.transactions) return;
+
+  // Find transaction by id or time
+  const idx = dayRec.transactions.findIndex(tx =>
+    (txId && tx.id === txId) || tx.time === txTime
+  );
+  if (idx < 0) { showToast('伝票が見つかりません'); return; }
+
+  const tx = dayRec.transactions[idx];
+  dayRec.transactions.splice(idx, 1);
+
+  // Recalculate day totals
+  dayRec.amount  = dayRec.transactions.reduce((s, t) => s + t.total, 0);
+  dayRec.cash    = dayRec.transactions.filter(t => t.payMethod === 'cash').reduce((s, t) => s + t.total, 0);
+  dayRec.card    = dayRec.transactions.filter(t => t.payMethod === 'card').reduce((s, t) => s + t.total, 0);
+  dayRec.qr      = dayRec.transactions.filter(t => t.payMethod === 'qr').reduce((s, t) => s + t.total, 0);
+  dayRec.guests  = dayRec.transactions.reduce((s, t) => s + (t.guests || 0), 0);
+
+  saveSales(sales);
+  renderSales();
+  showToast('伝票を削除しました');
+}
+
 function openAddSaleModal() {
   editingDate = null;
   document.getElementById('sale-date').value = toDateKey(new Date());
@@ -3842,9 +4014,7 @@ function selectTicketCustomer(name, isExisting) {
   const sel = document.getElementById('ticket-cust-selected');
   if (isExisting) {
     const c = customers.find(x => x.name === name);
-    const visits = c ? (c.visits || []).length : 0;
-    const total = c ? (c.visits || []).reduce((s, v) => s + v.total, 0) : 0;
-    sel.textContent = `${visits}回来店 / 累計¥${total.toLocaleString()}`;
+    sel.textContent = '';
     // Store for cart hint after ticket is created
     window._pendingCustHint = c ? c.id : null;
   } else {
