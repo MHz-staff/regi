@@ -1866,6 +1866,22 @@
   <div id="view-settings">
     <div class="settings-content">
       <div class="settings-section">
+        <div class="settings-title">📅 Googleカレンダー連携</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input type="text" id="gcal-api-key" placeholder="APIキー (AIza...)" autocomplete="off"
+            style="font-size:12px;font-family:'Space Mono',monospace"
+            oninput="saveGCalSettings()">
+          <input type="text" id="gcal-calendar-id" placeholder="カレンダーID (xxx@gmail.com)"
+            style="font-size:12px;font-family:'Space Mono',monospace"
+            oninput="saveGCalSettings()">
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="add-btn" onclick="fetchTodayEvents()">今日のイベントを取得</button>
+            <div id="gcal-status" style="font-size:12px;color:var(--text-dim)"></div>
+          </div>
+          <div id="gcal-today-events" style="font-size:12px;color:var(--text-dim)"></div>
+        </div>
+      </div>
+      <div class="settings-section">
         <div class="settings-title">DJ / イベント登録</div>
         <div class="form-row">
           <input type="text" id="new-dj-name" placeholder="DJ名またはイベントタイトル" style="flex:3">
@@ -2518,6 +2534,13 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSales();
     renderSettings();
     renderDJList();
+    initGCalUI();
+
+    // Auto-fetch today's Google Calendar events if API key is set
+    const gcalS = loadGCalSettings();
+    if (gcalS.apiKey && gcalS.calId) {
+      fetchTodayEvents().catch(() => {});
+    }
 
     // 🎂 誕生日アラート
     const today = new Date();
@@ -2874,7 +2897,10 @@ function openChargeModal() {
   const gEl = document.getElementById('charge-guests');
   if (gEl) gEl.value = '';
   const djEl = document.getElementById('charge-dj-input');
-  if (djEl) { djEl.value = ''; }
+  if (djEl) {
+    const todayEvent = getTodayEventName();
+    djEl.value = todayEvent || '';
+  }
   const djDd = document.getElementById('charge-dj-dropdown');
   if (djDd) djDd.classList.remove('open');
 
@@ -4119,6 +4145,94 @@ function selectChargeCustomer(name) {
   }
 }
 
+
+// ===== GOOGLE CALENDAR INTEGRATION =====
+const DB_GCAL = 'mhz_gcal';
+
+function loadGCalSettings() {
+  try { return JSON.parse(localStorage.getItem(DB_GCAL)) || {}; } catch { return {}; }
+}
+
+function saveGCalSettings() {
+  const apiKey = document.getElementById('gcal-api-key')?.value.trim() || '';
+  const calId  = document.getElementById('gcal-calendar-id')?.value.trim() || '';
+  localStorage.setItem(DB_GCAL, JSON.stringify({ apiKey, calId }));
+}
+
+function initGCalUI() {
+  const s = loadGCalSettings();
+  const keyEl = document.getElementById('gcal-api-key');
+  const calEl = document.getElementById('gcal-calendar-id');
+  if (keyEl && s.apiKey) keyEl.value = s.apiKey;
+  if (calEl && s.calId)  calEl.value = s.calId;
+}
+
+async function fetchTodayEvents() {
+  const s = loadGCalSettings();
+  if (!s.apiKey || !s.calId) {
+    document.getElementById('gcal-status').textContent = 'APIキーとカレンダーIDを入力してください';
+    return;
+  }
+  const statusEl = document.getElementById('gcal-status');
+  const eventsEl = document.getElementById('gcal-today-events');
+  statusEl.textContent = '取得中…';
+
+  const today = new Date();
+  const timeMin = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+  const timeMax = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+  const calId = encodeURIComponent(s.calId);
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${calId}/events?key=${s.apiKey}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const err = await res.json();
+      statusEl.textContent = `エラー: ${err.error?.message || res.status}`;
+      return;
+    }
+    const data = await res.json();
+    const events = data.items || [];
+
+    if (events.length === 0) {
+      statusEl.textContent = '今日のイベントなし';
+      eventsEl.textContent = '';
+      return;
+    }
+
+    // Save today's events to localStorage
+    const todayKey = toDateKey(new Date());
+    localStorage.setItem('mhz_gcal_today', JSON.stringify({ date: todayKey, events: events.map(e => e.summary) }));
+
+    statusEl.textContent = `${events.length}件取得しました ✅`;
+    eventsEl.innerHTML = events.map(e => {
+      const start = e.start?.dateTime ? new Date(e.start.dateTime).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) : '終日';
+      return `<div style="padding:4px 0;border-bottom:1px solid var(--border)">${start} ${e.summary}</div>`;
+    }).join('');
+
+    // Auto-add to DJ list if not already there
+    for (const e of events) {
+      if (e.summary && !djs.includes(e.summary)) {
+        djs.push(e.summary);
+      }
+    }
+    saveDJs();
+    renderDJList();
+    showToast(`📅 ${events.map(e => e.summary).join('・')} を取得しました`);
+
+  } catch (err) {
+    statusEl.textContent = `通信エラー: ${err.message}`;
+  }
+}
+
+function getTodayEventName() {
+  try {
+    const stored = JSON.parse(localStorage.getItem('mhz_gcal_today'));
+    if (!stored) return null;
+    const todayKey = toDateKey(new Date());
+    if (stored.date !== todayKey) return null;
+    return stored.events?.[0] || null;
+  } catch { return null; }
+}
 
 // ===== DJ MASTER =====
 function renderDJList() {
