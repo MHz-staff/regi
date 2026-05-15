@@ -1795,7 +1795,7 @@
   <div class="date-display" id="header-date"></div>
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showView('register')">レジ</button>
-    <button class="nav-tab" onclick="showView('timecard')">打刻</button>
+    <button class="nav-tab" onclick="showView('timecard')">スタッフ</button>
     <button class="nav-tab" onclick="showView('sales')">売上</button>
     <button class="nav-tab" onclick="showView('settings')">設定</button>
     <button class="nav-tab" onclick="showView('customers')">顧客</button>
@@ -1851,16 +1851,18 @@
   <div id="view-timecard" style="display:none;flex-direction:column;flex:1;overflow:hidden">
     <div style="display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0">
       <button id="tc-tab-punch" class="aperiod-btn active" style="border-radius:0;flex:1;padding:12px 0"
-        onclick="switchTcTab('punch')">⏱ 打刻</button>
+        onclick="switchTcTab('punch')">⏱ 出退勤</button>
       <button id="tc-tab-history" class="aperiod-btn" style="border-radius:0;flex:1;padding:12px 0"
         onclick="switchTcTab('history')">📋 履歴</button>
       <button id="tc-tab-shift" class="aperiod-btn" style="border-radius:0;flex:1;padding:12px 0"
         onclick="switchTcTab('shift')">📅 シフト</button>
+      <button id="tc-tab-members" class="aperiod-btn" style="border-radius:0;flex:1;padding:12px 0"
+        onclick="switchTcTab('members')">👤 メンバー</button>
     </div>
 
-    <!-- 打刻パネル -->
+    <!-- 出退勤パネル -->
     <div id="tc-punch-panel" style="flex:1;overflow-y:auto;padding:24px 20px;max-width:500px;margin:0 auto;width:100%">
-      <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px">スタッフを選んで打刻してください</div>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px">スタッフを選んで出勤・退勤を押してください</div>
       <div id="tc-staff-buttons" style="display:flex;flex-direction:column;gap:10px"></div>
     </div>
 
@@ -1879,20 +1881,38 @@
     </div>
 
     <!-- シフトパネル -->
-    <div id="tc-shift-panel" style="display:none;flex:1;overflow-y:auto;padding:20px;max-width:600px;margin:0 auto;width:100%">
-      <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px">スタッフが出勤できない日を登録します</div>
+    <div id="tc-shift-panel" style="display:none;flex:1;overflow-y:auto;padding:20px;max-width:680px;margin:0 auto;width:100%">
       <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
-        <select id="shift-staff-select"
-          style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;flex:1">
-        </select>
         <input type="month" id="shift-month-select" onchange="renderShiftCalendar()"
           style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px">
+        <div style="font-size:11px;color:var(--text-dim)">日付をタップしてスタッフと時間を設定</div>
+      </div>
+      <!-- カレンダー凡例 -->
+      <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;color:var(--text-dim);flex-wrap:wrap">
+        <span><span style="display:inline-block;width:10px;height:10px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:2px;margin-right:3px;vertical-align:middle"></span>出勤予定あり</span>
+        <span><span style="display:inline-block;width:10px;height:10px;background:#ffebee;border:1px solid #ffcccc;border-radius:2px;margin-right:3px;vertical-align:middle"></span>出勤不可あり</span>
       </div>
       <div id="shift-calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px"></div>
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">
-        <span style="display:inline-block;width:12px;height:12px;background:#ffebee;border:1px solid #ffcccc;border-radius:2px;margin-right:4px;vertical-align:middle"></span>出勤不可
+      <div id="shift-day-detail" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px"></div>
+    </div>
+
+    <!-- メンバー管理パネル -->
+    <div id="tc-members-panel" style="display:none;flex:1;overflow-y:auto;padding:20px;max-width:500px;margin:0 auto;width:100%">
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px">スタッフの追加・削除ができます</div>
+      <div id="tc-members-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px"></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px">新しいスタッフを追加</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input type="text" id="tc-new-staff-name" placeholder="名前"
+            style="padding:10px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:var(--bg);color:var(--text)">
+          <div style="display:flex;gap:8px">
+            <input type="month" id="tc-new-staff-start" placeholder="開始月"
+              style="flex:1;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);color:var(--text)">
+            <button class="add-btn" onclick="addTcStaff()">追加</button>
+          </div>
+          <div style="font-size:11px;color:var(--text-dim)">開始月を設定すると、その月から履歴に表示されます</div>
+        </div>
       </div>
-      <div id="shift-unavailable-list" style="display:flex;flex-direction:column;gap:4px"></div>
     </div>
   </div>
 
@@ -4259,6 +4279,7 @@ async function fetchTodayEventsMgmt() {
 // ===== TIMECARD =====
 const DB_TIMECARD = 'mhz_timecard';
 const DB_SHIFT    = 'mhz_shift';
+const DB_TC_STAFF = 'mhz_tc_staff'; // タイムカード専用スタッフリスト
 
 function loadTimecard() {
   try { return JSON.parse(localStorage.getItem(DB_TIMECARD)) || {}; } catch { return {}; }
@@ -4269,55 +4290,68 @@ function loadShift() {
 }
 function saveShift(data) { localStorage.setItem(DB_SHIFT, JSON.stringify(data)); }
 
+// タイムカード用スタッフ（管理タブのstaffListとは別管理）
+function loadTcStaff() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(DB_TC_STAFF));
+    if (saved && saved.length > 0) return saved;
+  } catch {}
+  // 初回：管理タブのstaffListからコピー
+  return staffList.map(s => ({ id: s.id, name: s.name, startMonth: null }));
+}
+function saveTcStaff(list) { localStorage.setItem(DB_TC_STAFF, JSON.stringify(list)); }
+let tcStaff = loadTcStaff();
+
 function switchTcTab(tab) {
-  ['punch','history','shift'].forEach(t => {
-    document.getElementById(`tc-${t}-panel`).style.display = t === tab ? (t==='punch'?'block':'block') : 'none';
-    document.getElementById(`tc-tab-${t}`).classList.toggle('active', t === tab);
+  ['punch','history','shift','members'].forEach(t => {
+    const panel = document.getElementById(`tc-${t}-panel`);
+    if (panel) panel.style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById(`tc-tab-${t}`);
+    if (btn) btn.classList.toggle('active', t === tab);
   });
+  if (tab === 'punch')   renderTcPunch();
   if (tab === 'history') renderTcHistory();
   if (tab === 'shift')   renderShiftCalendar();
+  if (tab === 'members') renderTcMembers();
 }
 
 function renderTcPunch() {
   const container = document.getElementById('tc-staff-buttons');
   if (!container) return;
+  tcStaff = loadTcStaff();
   const timecard = loadTimecard();
   const today = toDateKey(new Date());
 
-  container.innerHTML = staffList.map(st => {
+  container.innerHTML = tcStaff.map(st => {
     const dayRec = timecard[st.id]?.[today];
     const isIn   = dayRec && dayRec.in && !dayRec.out;
     const isDone = dayRec && dayRec.in && dayRec.out;
     const inTime  = dayRec?.in  ? new Date(dayRec.in).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : null;
     const outTime = dayRec?.out ? new Date(dayRec.out).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : null;
     const hours   = (dayRec?.in && dayRec?.out)
-      ? ((new Date(dayRec.out) - new Date(dayRec.in)) / 3600000).toFixed(1)
-      : null;
+      ? ((new Date(dayRec.out) - new Date(dayRec.in)) / 3600000).toFixed(1) : null;
 
     return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
         <div style="width:36px;height:36px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${st.name[0]}</div>
-        <div>
+        <div style="flex:1">
           <div style="font-size:15px;font-weight:600;color:var(--text)">${st.name}</div>
-          <div style="font-size:11px;color:var(--text-dim)">時給 ¥${st.wage.toLocaleString()}</div>
         </div>
-        ${isDone ? `<div style="margin-left:auto;font-size:12px;color:var(--green);font-weight:600">✅ 退勤済 ${hours}h</div>` : ''}
-        ${isIn ? `<div style="margin-left:auto;font-size:12px;color:var(--amber);font-weight:600">🟡 勤務中</div>` : ''}
+        ${isDone ? `<div style="font-size:12px;color:var(--green);font-weight:600">✅ ${hours}h勤務</div>` : ''}
+        ${isIn   ? `<div style="font-size:12px;color:var(--amber);font-weight:600">🟡 勤務中 ${inTime}〜</div>` : ''}
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button onclick="punchIn(${st.id})" ${isIn || isDone ? 'disabled' : ''}
-          style="flex:1;padding:12px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;
-          background:${isIn || isDone ? '#e0e0e0' : '#e8f5e9'};color:${isIn || isDone ? '#aaa' : 'var(--green)'}">
+      <div style="display:flex;gap:8px">
+        <button onclick="punchIn(${st.id})" ${isIn || isDone ? 'disabled style="opacity:0.4"' : ''}
+          style="flex:1;padding:14px;border-radius:8px;border:none;font-size:15px;font-weight:600;cursor:pointer;background:#e8f5e9;color:#2a7a3a">
           出勤 ${inTime ? inTime : ''}
         </button>
-        <button onclick="punchOut(${st.id})" ${!isIn ? 'disabled' : ''}
-          style="flex:1;padding:12px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;
-          background:${!isIn ? '#e0e0e0' : '#ffebee'};color:${!isIn ? '#aaa' : 'var(--red)'}">
+        <button onclick="punchOut(${st.id})" ${!isIn ? 'disabled style="opacity:0.4"' : ''}
+          style="flex:1;padding:14px;border-radius:8px;border:none;font-size:15px;font-weight:600;cursor:pointer;background:#ffebee;color:#cc3322">
           退勤 ${outTime ? outTime : ''}
         </button>
       </div>
     </div>`;
-  }).join('') || '<div style="color:var(--text-dim);font-size:13px">スタッフが登録されていません。管理→スタッフタブで追加してください。</div>';
+  }).join('') || '<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:30px">メンバータブからスタッフを追加してください</div>';
 }
 
 function punchIn(staffId) {
@@ -4327,7 +4361,7 @@ function punchIn(staffId) {
   if (timecard[staffId][today]?.in) { showToast('すでに出勤済みです'); return; }
   timecard[staffId][today] = { in: new Date().toISOString() };
   saveTimecard(timecard);
-  const st = staffList.find(s => s.id === staffId);
+  const st = tcStaff.find(s => s.id === staffId);
   showToast(`${st?.name} 出勤しました`);
   renderTcPunch();
 }
@@ -4339,7 +4373,7 @@ function punchOut(staffId) {
   if (timecard[staffId][today].out) { showToast('すでに退勤済みです'); return; }
   timecard[staffId][today].out = new Date().toISOString();
   saveTimecard(timecard);
-  const st = staffList.find(s => s.id === staffId);
+  const st = tcStaff.find(s => s.id === staffId);
   const hours = ((new Date() - new Date(timecard[staffId][today].in)) / 3600000).toFixed(1);
   showToast(`${st?.name} 退勤しました（${hours}h）`);
   renderTcPunch();
@@ -4350,59 +4384,59 @@ function renderTcHistory() {
   const monEl = document.getElementById('tc-history-month');
   const listEl= document.getElementById('tc-history-list');
   const sumEl = document.getElementById('tc-history-summary');
-  if (!sel || !monEl) return;
+  if (!sel || !monEl || !listEl) return;
 
-  const filterStaff = sel.value;
-  const filterMonth = monEl.value; // 'YYYY-MM'
-  const timecard = loadTimecard();
+  tcStaff = loadTcStaff();
 
-  // Populate staff selector
-  const currentOptions = [...sel.options].map(o => o.value);
-  if (currentOptions.length <= 1) {
-    staffList.forEach(st => {
+  // 今月をデフォルト
+  if (!monEl.value) monEl.value = toDateKey(new Date()).slice(0,7);
+
+  // スタッフ選択肢を更新
+  const existingIds = [...sel.options].map(o => o.value).filter(Boolean);
+  tcStaff.forEach(st => {
+    if (!existingIds.includes(String(st.id))) {
       const opt = document.createElement('option');
       opt.value = st.id; opt.textContent = st.name;
       sel.appendChild(opt);
-    });
-  }
+    }
+  });
+
+  const filterStaff = sel.value;
+  const filterMonth = monEl.value;
+  const timecard = loadTimecard();
 
   const rows = [];
-  for (const st of staffList) {
+  for (const st of tcStaff) {
     if (filterStaff && st.id != filterStaff) continue;
     const stRec = timecard[st.id] || {};
     for (const [date, rec] of Object.entries(stRec)) {
       if (filterMonth && !date.startsWith(filterMonth)) continue;
       if (!rec.in) continue;
       const hours = rec.out ? ((new Date(rec.out) - new Date(rec.in)) / 3600000) : null;
-      const pay   = hours ? Math.round(hours * st.wage) : null;
-      rows.push({ date, st, rec, hours, pay });
+      rows.push({ date, st, rec, hours });
     }
   }
   rows.sort((a, b) => b.date > a.date ? 1 : -1);
 
   listEl.innerHTML = rows.map(r => {
     const inT  = new Date(r.rec.in).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
-    const outT = r.rec.out ? new Date(r.rec.out).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : '—';
-    return `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px">
-      <div style="width:80px;color:var(--text-dim);font-family:'Space Mono',monospace">${r.date.slice(5).replace('-','/')}</div>
-      <div style="flex:1;font-weight:600">${r.st.name}</div>
-      <div style="color:var(--text-dim)">${inT} → ${outT}</div>
-      <div style="font-family:'Space Mono',monospace;color:var(--amber)">${r.hours ? r.hours.toFixed(1)+'h' : '勤務中'}</div>
-      <div style="font-family:'Space Mono',monospace;color:var(--green)">${r.pay ? '¥'+r.pay.toLocaleString() : '—'}</div>
-      <button onclick="deleteTcRecord(${r.st.id},'${r.date}')" style="padding:2px 6px;border:1px solid #ffcccc;border-radius:4px;background:transparent;color:var(--red);font-size:11px;cursor:pointer">削除</button>
+    const outT = r.rec.out ? new Date(r.rec.out).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : '勤務中';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;flex-wrap:wrap">
+      <div style="color:var(--text-dim);font-family:'Space Mono',monospace;min-width:55px">${r.date.slice(5).replace('-','/')}</div>
+      <div style="font-weight:600;min-width:60px">${r.st.name}</div>
+      <div style="color:var(--text-dim);flex:1">${inT} → ${outT}</div>
+      <div style="font-family:'Space Mono',monospace;color:var(--amber);min-width:40px">${r.hours ? r.hours.toFixed(1)+'h' : '—'}</div>
+      <button onclick="deleteTcRecord(${r.st.id},'${r.date}')" style="padding:2px 8px;border:1px solid #ffcccc;border-radius:4px;background:transparent;color:var(--red);font-size:11px;cursor:pointer">削除</button>
     </div>`;
   }).join('') || '<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px">記録がありません</div>';
 
-  // Summary
   const totalHours = rows.filter(r => r.hours).reduce((s, r) => s + r.hours, 0);
-  const totalPay   = rows.filter(r => r.pay).reduce((s, r) => s + r.pay, 0);
   sumEl.innerHTML = rows.length > 0
-    ? `合計: <b>${totalHours.toFixed(1)}時間</b> / 人件費合計: <b>¥${totalPay.toLocaleString()}</b>`
-    : '';
+    ? `合計勤務時間: <b>${totalHours.toFixed(1)}時間</b>` : '';
 }
 
 function deleteTcRecord(staffId, date) {
-  if (!confirm(`${date}の打刻記録を削除しますか？`)) return;
+  if (!confirm(`${date}の記録を削除しますか？`)) return;
   const timecard = loadTimecard();
   if (timecard[staffId]) delete timecard[staffId][date];
   saveTimecard(timecard);
@@ -4410,75 +4444,164 @@ function deleteTcRecord(staffId, date) {
   showToast('削除しました');
 }
 
+// ===== MEMBER MANAGEMENT =====
+function renderTcMembers() {
+  tcStaff = loadTcStaff();
+  const listEl = document.getElementById('tc-members-list');
+  if (!listEl) return;
+  listEl.innerHTML = tcStaff.map(st => `
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px;flex-shrink:0">${st.name[0]}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600">${st.name}</div>
+        ${st.startMonth ? `<div style="font-size:11px;color:var(--text-dim)">${st.startMonth}〜</div>` : ''}
+      </div>
+      <button onclick="removeTcStaff(${st.id})" style="padding:4px 10px;border:1px solid #ffcccc;border-radius:6px;background:transparent;color:var(--red);font-size:12px;cursor:pointer">削除</button>
+    </div>`).join('') || '<div style="color:var(--text-dim);font-size:13px">スタッフがいません</div>';
+}
+
+function addTcStaff() {
+  const name = document.getElementById('tc-new-staff-name').value.trim();
+  const startMonth = document.getElementById('tc-new-staff-start').value;
+  if (!name) { showToast('名前を入力してください'); return; }
+  tcStaff = loadTcStaff();
+  const newId = tcStaff.length > 0 ? Math.max(...tcStaff.map(s => s.id)) + 1 : 100;
+  tcStaff.push({ id: newId, name, startMonth: startMonth || null });
+  saveTcStaff(tcStaff);
+  document.getElementById('tc-new-staff-name').value = '';
+  document.getElementById('tc-new-staff-start').value = '';
+  renderTcMembers();
+  showToast(`${name} を追加しました`);
+}
+
+function removeTcStaff(id) {
+  const st = tcStaff.find(s => s.id === id);
+  if (!confirm(`${st?.name} を削除しますか？打刻記録は残ります。`)) return;
+  tcStaff = tcStaff.filter(s => s.id !== id);
+  saveTcStaff(tcStaff);
+  renderTcMembers();
+  showToast('削除しました');
+}
+
 // ===== SHIFT CALENDAR =====
 function renderShiftCalendar() {
-  const staffSel = document.getElementById('shift-staff-select');
-  const monEl    = document.getElementById('shift-month-select');
-  const calEl    = document.getElementById('shift-calendar');
-  const listEl   = document.getElementById('shift-unavailable-list');
-  if (!staffSel || !monEl) return;
+  const monEl  = document.getElementById('shift-month-select');
+  const calEl  = document.getElementById('shift-calendar');
+  if (!monEl || !calEl) return;
 
-  // Populate staff selector
-  if (staffSel.options.length === 0) {
-    staffList.forEach(st => {
-      const opt = document.createElement('option');
-      opt.value = st.id; opt.textContent = st.name;
-      staffSel.appendChild(opt);
-    });
-  }
-
-  const selStaffId = parseInt(staffSel.value) || staffList[0]?.id;
   const monVal = monEl.value || toDateKey(new Date()).slice(0,7);
   if (!monEl.value) monEl.value = monVal;
 
   const [y, m] = monVal.split('-').map(Number);
   const shift = loadShift();
-  const stKey = String(selStaffId);
-  const unavailable = shift[stKey] || [];
+  tcStaff = loadTcStaff();
 
-  // Calendar grid
-  const days = ['日','月','火','水','木','金','土'];
   const daysInMonth = new Date(y, m, 0).getDate();
   const firstDow = new Date(y, m-1, 1).getDay();
+  const days = ['日','月','火','水','木','金','土'];
 
-  let html = days.map(d => `<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:4px 0">${d}</div>`).join('');
+  let html = days.map(d => `<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:4px 0;font-weight:600">${d}</div>`).join('');
   for (let i = 0; i < firstDow; i++) html += '<div></div>';
+
   for (let d = 1; d <= daysInMonth; d++) {
     const dateKey = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isUnavail = unavailable.includes(dateKey);
+    const dayShift = shift[dateKey] || {};
+    const hasWorkers = (dayShift.workers || []).length > 0;
+    const hasUnavail = tcStaff.some(st => (dayShift.unavailable || []).includes(st.id));
     const dow = new Date(y, m-1, d).getDay();
     const isWeekend = dow === 0 || dow === 6;
-    html += `<div onclick="toggleUnavailable(${selStaffId},'${dateKey}')"
-      style="text-align:center;padding:8px 4px;border-radius:6px;cursor:pointer;font-size:13px;
-      background:${isUnavail ? '#ffebee' : 'var(--surface)'};
-      border:1px solid ${isUnavail ? '#ffcccc' : 'var(--border)'};
-      color:${isUnavail ? 'var(--red)' : isWeekend ? 'var(--amber)' : 'var(--text)'}">
-      ${d}
+    const isToday = dateKey === toDateKey(new Date());
+
+    html += `<div onclick="openShiftDay('${dateKey}')"
+      style="text-align:center;padding:6px 2px;border-radius:6px;cursor:pointer;font-size:13px;
+      background:${hasWorkers ? '#e8f5e9' : hasUnavail ? '#ffebee' : 'var(--surface)'};
+      border:2px solid ${isToday ? 'var(--amber)' : hasWorkers ? '#a5d6a7' : hasUnavail ? '#ffcccc' : 'var(--border)'};
+      color:${isWeekend ? 'var(--amber)' : 'var(--text)'}">
+      <div>${d}</div>
+      ${hasWorkers ? `<div style="font-size:9px;color:var(--green);line-height:1.2">${(dayShift.workers||[]).map(w=>w.name.slice(0,2)).join(' ')}</div>` : ''}
     </div>`;
   }
   calEl.innerHTML = html;
-
-  // List of unavailable dates
-  listEl.innerHTML = unavailable.sort().map(date => {
-    const dt = new Date(date+'T00:00:00');
-    const dow = days[dt.getDay()];
-    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#ffebee;border:1px solid #ffcccc;border-radius:6px;font-size:12px">
-      <span style="color:var(--red)">${date.slice(5).replace('-','/')}(${dow})</span>
-      <button onclick="toggleUnavailable(${selStaffId},'${date}')"
-        style="margin-left:auto;padding:1px 8px;border:1px solid #ffcccc;border-radius:4px;background:transparent;color:var(--red);font-size:11px;cursor:pointer">取消</button>
-    </div>`;
-  }).join('') || '<div style="font-size:12px;color:var(--text-dim)">出勤不可日なし</div>';
+  document.getElementById('shift-day-detail').style.display = 'none';
 }
 
-function toggleUnavailable(staffId, dateKey) {
+function openShiftDay(dateKey) {
   const shift = loadShift();
-  const stKey = String(staffId);
-  if (!shift[stKey]) shift[stKey] = [];
-  const idx = shift[stKey].indexOf(dateKey);
-  if (idx >= 0) shift[stKey].splice(idx, 1);
-  else shift[stKey].push(dateKey);
+  tcStaff = loadTcStaff();
+  const dayShift = shift[dateKey] || { workers: [], unavailable: [] };
+  const dt = new Date(dateKey+'T00:00:00');
+  const days = ['日','月','火','水','木','金','土'];
+  const dayLabel = `${dateKey.slice(5).replace('-','/')}(${days[dt.getDay()]})`;
+
+  const detailEl = document.getElementById('shift-day-detail');
+  detailEl.style.display = 'block';
+
+  const workersHtml = tcStaff.map(st => {
+    const worker = (dayShift.workers || []).find(w => w.id === st.id);
+    const isScheduled = !!worker;
+    const startTime = worker?.startTime || '';
+    const isUnavail = (dayShift.unavailable || []).includes(st.id);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px;background:${isScheduled?'#e8f5e9':isUnavail?'#ffebee':'var(--bg)'};border:1px solid ${isScheduled?'#a5d6a7':isUnavail?'#ffcccc':'var(--border)'};border-radius:8px;margin-bottom:6px">
+      <div style="font-size:13px;font-weight:600;min-width:70px">${st.name}</div>
+      <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">
+        <input type="checkbox" ${isScheduled?'checked':''} onchange="toggleShiftWorker('${dateKey}',${st.id},this.checked)" style="width:16px;height:16px">出勤
+      </label>
+      <input type="time" value="${startTime}" ${!isScheduled?'disabled':''}
+        onchange="setShiftStartTime('${dateKey}',${st.id},this.value)"
+        style="padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--surface);color:var(--text);opacity:${isScheduled?1:0.4}">
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--red);cursor:pointer;margin-left:auto">
+        <input type="checkbox" ${isUnavail?'checked':''} onchange="toggleUnavailable('${dateKey}',${st.id},this.checked)" style="width:14px;height:14px">不可
+      </label>
+    </div>`;
+  }).join('');
+
+  detailEl.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:14px;font-weight:700">${dayLabel}</div>
+      <button onclick="document.getElementById('shift-day-detail').style.display='none'" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-dim);font-size:12px;cursor:pointer">閉じる</button>
+    </div>
+    ${workersHtml}`;
+
+  detailEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function toggleShiftWorker(dateKey, staffId, checked) {
+  const shift = loadShift();
+  if (!shift[dateKey]) shift[dateKey] = { workers: [], unavailable: [] };
+  if (!shift[dateKey].workers) shift[dateKey].workers = [];
+  const st = tcStaff.find(s => s.id === staffId);
+  if (checked) {
+    if (!shift[dateKey].workers.find(w => w.id === staffId)) {
+      shift[dateKey].workers.push({ id: staffId, name: st?.name || '', startTime: '' });
+    }
+  } else {
+    shift[dateKey].workers = shift[dateKey].workers.filter(w => w.id !== staffId);
+  }
   saveShift(shift);
   renderShiftCalendar();
+  openShiftDay(dateKey);
+}
+
+function setShiftStartTime(dateKey, staffId, time) {
+  const shift = loadShift();
+  if (!shift[dateKey]?.workers) return;
+  const worker = shift[dateKey].workers.find(w => w.id === staffId);
+  if (worker) worker.startTime = time;
+  saveShift(shift);
+}
+
+function toggleUnavailable(dateKey, staffId, checked) {
+  const shift = loadShift();
+  if (!shift[dateKey]) shift[dateKey] = { workers: [], unavailable: [] };
+  if (!shift[dateKey].unavailable) shift[dateKey].unavailable = [];
+  if (checked) {
+    if (!shift[dateKey].unavailable.includes(staffId)) shift[dateKey].unavailable.push(staffId);
+  } else {
+    shift[dateKey].unavailable = shift[dateKey].unavailable.filter(id => id !== staffId);
+  }
+  saveShift(shift);
+  renderShiftCalendar();
+  openShiftDay(dateKey);
 }
 
 // ===== GOOGLE CALENDAR INTEGRATION =====
