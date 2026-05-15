@@ -3781,7 +3781,7 @@ function renderCustomerDetail(id) {
     : visits.map(v => {
         const d = new Date(v.date);
         const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-        const itemsStr = v.items.map(i => `${i.name} ×${i.qty}`).join('、');
+        const itemsStr = (v.items || []).map(i => typeof i === 'string' ? i : `${i.name}×${i.qty}`).filter(Boolean).join('・');
         return `<div class="cust-visit">
           <div class="cust-visit-header">
             <span class="cust-visit-date">${dateStr}</span>
