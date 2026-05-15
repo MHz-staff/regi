@@ -2546,6 +2546,7 @@ let items = loadItems();
 let sales = loadSales();
 let customers = loadCustomers();
 let djs = loadDJs();
+let squareSalesData = {}; // properly initialized after loadSquareSales() is defined
 
 const DB_DJS = 'mhz_djs';
 const DB_PIN = 'mhz_pin';
@@ -5700,7 +5701,7 @@ function saveSquareSales() { localStorage.setItem(DB_SQUARE_SALES, JSON.stringif
 let staffList = loadStaff();
 let acctData  = loadAcct();
 let goalSettings = loadGoals();
-let squareSalesData = loadSquareSales(); // { 'YYYY-MM-DD': { total, items:[{name,qty,revenue,cat}], cats:{cat:amt} } }
+squareSalesData = loadSquareSales(); // properly initialize now that loadSquareSales is defined
 let acctMonth = new Date();
 
 const EXPENSE_ITEMS = [
