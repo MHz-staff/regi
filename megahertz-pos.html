@@ -1881,18 +1881,18 @@
     </div>
 
     <!-- シフトパネル -->
-    <div id="tc-shift-panel" style="display:none;flex:1;overflow-y:auto;padding:20px;max-width:680px;margin:0 auto;width:100%">
-      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+    <div id="tc-shift-panel" style="display:none;flex:1;overflow-y:auto;padding:16px;width:100%;box-sizing:border-box">
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
         <input type="month" id="shift-month-select" onchange="renderShiftCalendar()"
           style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px">
-        <div style="font-size:11px;color:var(--text-dim)">日付をタップしてスタッフと時間を設定</div>
+        <div style="font-size:12px;color:var(--text-dim)">日付をタップ → 出勤・出勤不可を設定</div>
       </div>
-      <!-- カレンダー凡例 -->
-      <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;color:var(--text-dim);flex-wrap:wrap">
-        <span><span style="display:inline-block;width:10px;height:10px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:2px;margin-right:3px;vertical-align:middle"></span>出勤予定あり</span>
-        <span><span style="display:inline-block;width:10px;height:10px;background:#ffebee;border:1px solid #ffcccc;border-radius:2px;margin-right:3px;vertical-align:middle"></span>出勤不可あり</span>
+      <div style="display:flex;gap:10px;margin-bottom:8px;font-size:11px;color:var(--text-dim);flex-wrap:wrap">
+        <span><span style="display:inline-block;width:10px;height:10px;background:#f0faf2;border:1px solid #a5d6a7;border-radius:2px;margin-right:3px;vertical-align:middle"></span>出勤予定</span>
+        <span><span style="display:inline-block;width:10px;height:10px;background:#fff5f5;border:1px solid #ffcccc;border-radius:2px;margin-right:3px;vertical-align:middle"></span>出勤不可</span>
+        <span><span style="display:inline-block;width:10px;height:10px;background:#fffbe6;border:2px solid #e8a030;border-radius:2px;margin-right:3px;vertical-align:middle"></span>選択中</span>
       </div>
-      <div id="shift-calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px"></div>
+      <div id="shift-calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:12px"></div>
       <div id="shift-day-detail" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px"></div>
     </div>
 
@@ -4323,8 +4323,10 @@ function renderTcPunch() {
   tcStaff = loadTcStaff();
   const timecard = loadTimecard();
   const today = toDateKey(new Date());
+  const nowStr = new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
 
-  container.innerHTML = tcStaff.map(st => {
+  container.innerHTML = `<div style="text-align:right;font-size:12px;color:var(--text-dim);margin-bottom:8px">現在時刻: <b style="color:var(--text);font-size:14px">${nowStr}</b></div>`
+  + (tcStaff.map(st => {
     const dayRec = timecard[st.id]?.[today];
     const isIn   = dayRec && dayRec.in && !dayRec.out;
     const isDone = dayRec && dayRec.in && dayRec.out;
@@ -4333,27 +4335,32 @@ function renderTcPunch() {
     const hours   = (dayRec?.in && dayRec?.out)
       ? ((new Date(dayRec.out) - new Date(dayRec.in)) / 3600000).toFixed(1) : null;
 
-    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <div style="width:36px;height:36px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${st.name[0]}</div>
+    return `<div style="background:var(--surface);border:2px solid ${isDone?'#a5d6a7':isIn?'#f0c040':'var(--border)'};border-radius:12px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${st.name[0]}</div>
         <div style="flex:1">
-          <div style="font-size:15px;font-weight:600;color:var(--text)">${st.name}</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">${st.name}</div>
+          <div style="font-size:12px;margin-top:2px">
+            ${isDone ? `<span style="color:#2a7a3a">✅ ${inTime}〜${outTime} (${hours}h)</span>` :
+              isIn   ? `<span style="color:#c08000">🟡 ${inTime}〜勤務中</span>` :
+                       `<span style="color:var(--text-dim)">未出勤</span>`}
+          </div>
         </div>
-        ${isDone ? `<div style="font-size:12px;color:var(--green);font-weight:600">✅ ${hours}h勤務</div>` : ''}
-        ${isIn   ? `<div style="font-size:12px;color:var(--amber);font-weight:600">🟡 勤務中 ${inTime}〜</div>` : ''}
       </div>
-      <div style="display:flex;gap:8px">
-        <button onclick="punchIn(${st.id})" ${isIn || isDone ? 'disabled style="opacity:0.4"' : ''}
-          style="flex:1;padding:14px;border-radius:8px;border:none;font-size:15px;font-weight:600;cursor:pointer;background:#e8f5e9;color:#2a7a3a">
-          出勤 ${inTime ? inTime : ''}
+      <div style="display:flex;gap:10px">
+        <button onclick="punchIn(${st.id})" ${isIn||isDone?'disabled':''}
+          style="flex:1;padding:16px 8px;border-radius:10px;border:none;font-size:15px;font-weight:700;cursor:${isIn||isDone?'default':'pointer'};
+          background:${isIn||isDone?'#e0e0e0':'#c8ecd0'};color:${isIn||isDone?'#999':'#1a6a2a'}">
+          出勤${inTime?'<br><span style="font-size:11px;font-weight:400">'+inTime+'</span>':''}
         </button>
-        <button onclick="punchOut(${st.id})" ${!isIn ? 'disabled style="opacity:0.4"' : ''}
-          style="flex:1;padding:14px;border-radius:8px;border:none;font-size:15px;font-weight:600;cursor:pointer;background:#ffebee;color:#cc3322">
-          退勤 ${outTime ? outTime : ''}
+        <button onclick="punchOut(${st.id})" ${!isIn?'disabled':''}
+          style="flex:1;padding:16px 8px;border-radius:10px;border:none;font-size:15px;font-weight:700;cursor:${!isIn?'default':'pointer'};
+          background:${!isIn?'#e0e0e0':'#fdd0cc'};color:${!isIn?'#999':'#aa2211'}">
+          退勤${outTime?'<br><span style="font-size:11px;font-weight:400">'+outTime+'</span>':''}
         </button>
       </div>
     </div>`;
-  }).join('') || '<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:30px">メンバータブからスタッフを追加してください</div>';
+  }).join('') || '<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:30px">メンバータブからスタッフを追加してください</div>');
 }
 
 function punchIn(staffId) {
@@ -4379,6 +4386,191 @@ function punchOut(staffId) {
   const hours = ((new Date() - new Date(timecard[staffId][today].in)) / 3600000).toFixed(1);
   showToast(`${st?.name} 退勤しました（${hours}h）`);
   renderTcPunch();
+}
+
+let selectedShiftDate = null;
+
+function renderShiftCalendar() {
+  const monEl  = document.getElementById('shift-month-select');
+  const calEl  = document.getElementById('shift-calendar');
+  if (!monEl || !calEl) return;
+
+  const monVal = monEl.value || toDateKey(new Date()).slice(0,7);
+  if (!monEl.value) monEl.value = monVal;
+
+  const [y, m] = monVal.split('-').map(Number);
+  const shift = loadShift();
+  tcStaff = loadTcStaff();
+
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const firstDow = new Date(y, m-1, 1).getDay();
+  const days = ['日','月','火','水','木','金','土'];
+  const todayKey = toDateKey(new Date());
+
+  // Header
+  let html = days.map((d,i) => `<div style="text-align:center;font-size:12px;padding:6px 0;font-weight:700;color:${i===0?'#cc3322':i===6?'#2255cc':'var(--text-dim)'}">${d}</div>`).join('');
+  for (let i = 0; i < firstDow; i++) html += '<div></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateKey = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayShift = shift[dateKey] || {};
+    const workers   = dayShift.workers || [];
+    const unavail   = dayShift.unavailable || [];
+    const dow = new Date(y, m-1, d).getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const isToday   = dateKey === todayKey;
+    const isSelected = dateKey === selectedShiftDate;
+
+    // Build cell content
+    const workerLines = workers.map(w =>
+      `<div style="font-size:9px;color:#1a6a2a;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.name.slice(0,3)}${w.startTime?'<span style="color:#888"> '+w.startTime+'</span>':''}</div>`
+    ).join('');
+    const unavailNames = unavail.map(id => tcStaff.find(s=>s.id===id)?.name?.slice(0,2)).filter(Boolean);
+    const unavailLine = unavailNames.length > 0
+      ? `<div style="font-size:9px;color:#cc3322;line-height:1.3">休:${unavailNames.join(' ')}</div>` : '';
+
+    const bg = isSelected ? '#fffbe6' : workers.length>0 ? '#f0faf2' : unavail.length>0 ? '#fff5f5' : 'var(--surface)';
+    const border = isSelected ? '2px solid #e8a030' : isToday ? '2px solid #4a90d9' : '1px solid var(--border)';
+
+    html += `<div onclick="openShiftDay('${dateKey}')"
+      style="padding:4px;border-radius:6px;cursor:pointer;min-height:52px;
+      background:${bg};border:${border};
+      color:${isWeekend?(dow===0?'#cc3322':'#2255cc'):'var(--text)'}">
+      <div style="font-size:13px;font-weight:${isToday?'700':'500'};margin-bottom:2px">${d}</div>
+      ${workerLines}${unavailLine}
+    </div>`;
+  }
+  calEl.innerHTML = html;
+
+  if (selectedShiftDate) openShiftDay(selectedShiftDate);
+}
+
+function openShiftDay(dateKey) {
+  selectedShiftDate = dateKey;
+  const shift = loadShift();
+  tcStaff = loadTcStaff();
+  const dayShift = shift[dateKey] || { workers: [], unavailable: [] };
+  const dt = new Date(dateKey+'T00:00:00');
+  const days = ['日','月','火','水','木','金','土'];
+  const dayLabel = `${dateKey.slice(5).replace('-','/')}(${days[dt.getDay()]})`;
+
+  const detailEl = document.getElementById('shift-day-detail');
+  detailEl.style.display = 'block';
+
+  const workersHtml = tcStaff.map(st => {
+    const worker = (dayShift.workers || []).find(w => w.id === st.id);
+    const isScheduled = !!worker;
+    const startTime = worker?.startTime || '';
+    const isUnavail = (dayShift.unavailable || []).includes(st.id);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+      background:${isScheduled?'#f0faf2':isUnavail?'#fff5f5':'var(--bg)'};
+      border:1px solid ${isScheduled?'#a5d6a7':isUnavail?'#ffcccc':'var(--border)'};
+      border-radius:8px;margin-bottom:6px">
+      <div style="font-size:14px;font-weight:600;min-width:75px">${st.name}</div>
+      <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+        <input type="checkbox" ${isScheduled?'checked':''} onchange="toggleShiftWorker('${dateKey}',${st.id},this.checked)" style="width:18px;height:18px">
+        <span style="color:var(--green)">出勤</span>
+      </label>
+      <input type="time" value="${startTime}" ${!isScheduled?'disabled':''}
+        onchange="setShiftStartTime('${dateKey}',${st.id},this.value)"
+        style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;
+        background:var(--surface);color:var(--text);opacity:${isScheduled?1:0.4};flex:1">
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;margin-left:auto">
+        <input type="checkbox" ${isUnavail?'checked':''} onchange="toggleUnavailable('${dateKey}',${st.id},this.checked)" style="width:16px;height:16px">
+        <span style="color:var(--red)">休</span>
+      </label>
+    </div>`;
+  }).join('');
+
+  detailEl.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700">${dayLabel}</div>
+      <button onclick="selectedShiftDate=null;document.getElementById('shift-day-detail').style.display='none';renderShiftCalendar()"
+        style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-dim);font-size:12px;cursor:pointer">閉じる</button>
+    </div>
+    ${workersHtml}`;
+
+  // Re-render calendar to update selected highlight
+  const calEl = document.getElementById('shift-calendar');
+  if (calEl) {
+    const monEl = document.getElementById('shift-month-select');
+    const monVal = monEl?.value || toDateKey(new Date()).slice(0,7);
+    const [y, m] = monVal.split('-').map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const firstDow = new Date(y, m-1, 1).getDay();
+    const days2 = ['日','月','火','水','木','金','土'];
+    const todayKey = toDateKey(new Date());
+    const shift2 = loadShift();
+
+    let html = days2.map((d,i) => `<div style="text-align:center;font-size:12px;padding:6px 0;font-weight:700;color:${i===0?'#cc3322':i===6?'#2255cc':'var(--text-dim)'}">${d}</div>`).join('');
+    for (let i = 0; i < firstDow; i++) html += '<div></div>';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dk = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const ds = shift2[dk] || {};
+      const workers = ds.workers || [];
+      const unavail = ds.unavailable || [];
+      const dow2 = new Date(y, m-1, d).getDay();
+      const isWE = dow2===0||dow2===6;
+      const isTdy = dk===todayKey;
+      const isSel = dk===selectedShiftDate;
+      const workerLines = workers.map(w=>`<div style="font-size:9px;color:#1a6a2a;line-height:1.3;overflow:hidden;text-overflow:ellipsis">${w.name.slice(0,3)}${w.startTime?' <span style="color:#888">'+w.startTime+'</span>':''}</div>`).join('');
+      const unavailLine = unavail.map(id=>tcStaff.find(s=>s.id===id)?.name?.slice(0,2)).filter(Boolean);
+      const uLine = unavailLine.length>0?`<div style="font-size:9px;color:#cc3322">休:${unavailLine.join(' ')}</div>`:'';
+      const bg = isSel?'#fffbe6':workers.length>0?'#f0faf2':unavail.length>0?'#fff5f5':'var(--surface)';
+      const border = isSel?'2px solid #e8a030':isTdy?'2px solid #4a90d9':'1px solid var(--border)';
+      html += `<div onclick="openShiftDay('${dk}')" style="padding:4px;border-radius:6px;cursor:pointer;min-height:52px;background:${bg};border:${border};color:${isWE?(dow2===0?'#cc3322':'#2255cc'):'var(--text)'}"><div style="font-size:13px;font-weight:${isTdy?'700':'500'};margin-bottom:2px">${d}</div>${workerLines}${uLine}</div>`;
+    }
+    calEl.innerHTML = html;
+  }
+}
+
+function toggleShiftWorker(dateKey, staffId, checked) {
+  const shift = loadShift();
+  if (!shift[dateKey]) shift[dateKey] = { workers: [], unavailable: [] };
+  if (!shift[dateKey].workers) shift[dateKey].workers = [];
+  const st = tcStaff.find(s => s.id === staffId);
+  if (checked) {
+    if (!shift[dateKey].workers.find(w => w.id === staffId)) {
+      // Use default time from first worker in this day if exists
+      const defaultTime = shift[dateKey].workers[0]?.startTime || '';
+      shift[dateKey].workers.push({ id: staffId, name: st?.name || '', startTime: defaultTime });
+    }
+  } else {
+    shift[dateKey].workers = shift[dateKey].workers.filter(w => w.id !== staffId);
+  }
+  saveShift(shift);
+  openShiftDay(dateKey);
+}
+
+function setShiftStartTime(dateKey, staffId, time) {
+  const shift = loadShift();
+  if (!shift[dateKey]?.workers) return;
+  const worker = shift[dateKey].workers.find(w => w.id === staffId);
+  if (worker) {
+    const isFirst = shift[dateKey].workers[0]?.id === staffId;
+    worker.startTime = time;
+    // If this is the first worker set, apply to all workers without a time
+    if (isFirst) {
+      shift[dateKey].workers.forEach(w => { if (!w.startTime) w.startTime = time; });
+    }
+  }
+  saveShift(shift);
+  openShiftDay(dateKey);
+}
+
+function toggleUnavailable(dateKey, staffId, checked) {
+  const shift = loadShift();
+  if (!shift[dateKey]) shift[dateKey] = { workers: [], unavailable: [] };
+  if (!shift[dateKey].unavailable) shift[dateKey].unavailable = [];
+  if (checked) {
+    if (!shift[dateKey].unavailable.includes(staffId)) shift[dateKey].unavailable.push(staffId);
+    // Remove from workers if marked unavailable
+    shift[dateKey].workers = (shift[dateKey].workers||[]).filter(w => w.id !== staffId);
+  } else {
+    shift[dateKey].unavailable = shift[dateKey].unavailable.filter(id => id !== staffId);
+  }
+  saveShift(shift);
+  openShiftDay(dateKey);
 }
 
 function renderTcHistory() {
