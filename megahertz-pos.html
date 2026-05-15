@@ -2604,6 +2604,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     updateHeaderDate();
     activeTicketId = tickets.length > 0 ? tickets[0].id : null;
+    tcStaff = loadTcStaff(); // initialize after staffList is ready
     renderTicketBar();
     renderRegister();
     renderSales();
@@ -4298,10 +4299,10 @@ function loadTcStaff() {
     if (saved && saved.length > 0) return saved;
   } catch {}
   // 初回：管理タブのstaffListからコピー
-  return staffList.map(s => ({ id: s.id, name: s.name, startMonth: null }));
+  return (staffList || []).map(s => ({ id: s.id, name: s.name, startMonth: null }));
 }
 function saveTcStaff(list) { localStorage.setItem(DB_TC_STAFF, JSON.stringify(list)); }
-let tcStaff = loadTcStaff();
+let tcStaff = []; // initialized in DOMContentLoaded after staffList is ready
 
 function switchTcTab(tab) {
   ['punch','history','shift','members'].forEach(t => {
