@@ -1795,6 +1795,7 @@
   <div class="date-display" id="header-date"></div>
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showView('register')">レジ</button>
+    <button class="nav-tab" onclick="showView('timecard')">打刻</button>
     <button class="nav-tab" onclick="showView('sales')">売上</button>
     <button class="nav-tab" onclick="showView('settings')">設定</button>
     <button class="nav-tab" onclick="showView('customers')">顧客</button>
@@ -1846,6 +1847,55 @@
     </div>
   </div>
 
+  <!-- ===== TIMECARD ===== -->
+  <div id="view-timecard" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0">
+      <button id="tc-tab-punch" class="aperiod-btn active" style="border-radius:0;flex:1;padding:12px 0"
+        onclick="switchTcTab('punch')">⏱ 打刻</button>
+      <button id="tc-tab-history" class="aperiod-btn" style="border-radius:0;flex:1;padding:12px 0"
+        onclick="switchTcTab('history')">📋 履歴</button>
+      <button id="tc-tab-shift" class="aperiod-btn" style="border-radius:0;flex:1;padding:12px 0"
+        onclick="switchTcTab('shift')">📅 シフト</button>
+    </div>
+
+    <!-- 打刻パネル -->
+    <div id="tc-punch-panel" style="flex:1;overflow-y:auto;padding:24px 20px;max-width:500px;margin:0 auto;width:100%">
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px">スタッフを選んで打刻してください</div>
+      <div id="tc-staff-buttons" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+
+    <!-- 履歴パネル -->
+    <div id="tc-history-panel" style="display:none;flex:1;overflow-y:auto;padding:20px;max-width:600px;margin:0 auto;width:100%">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+        <select id="tc-history-staff" onchange="renderTcHistory()"
+          style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px">
+          <option value="">全スタッフ</option>
+        </select>
+        <input type="month" id="tc-history-month" onchange="renderTcHistory()"
+          style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px">
+      </div>
+      <div id="tc-history-list" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div id="tc-history-summary" style="margin-top:16px;padding:12px;background:var(--surface);border-radius:8px;font-size:13px"></div>
+    </div>
+
+    <!-- シフトパネル -->
+    <div id="tc-shift-panel" style="display:none;flex:1;overflow-y:auto;padding:20px;max-width:600px;margin:0 auto;width:100%">
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px">スタッフが出勤できない日を登録します</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+        <select id="shift-staff-select"
+          style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;flex:1">
+        </select>
+        <input type="month" id="shift-month-select" onchange="renderShiftCalendar()"
+          style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px">
+      </div>
+      <div id="shift-calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px"></div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">
+        <span style="display:inline-block;width:12px;height:12px;background:#ffebee;border:1px solid #ffcccc;border-radius:2px;margin-right:4px;vertical-align:middle"></span>出勤不可
+      </div>
+      <div id="shift-unavailable-list" style="display:flex;flex-direction:column;gap:4px"></div>
+    </div>
+  </div>
+
   <!-- ===== SALES ===== -->
   <div id="view-sales">
     <div class="sales-toolbar">
@@ -1865,30 +1915,6 @@
   <!-- ===== SETTINGS ===== -->
   <div id="view-settings">
     <div class="settings-content">
-      <div class="settings-section">
-        <div class="settings-title">📅 Googleカレンダー連携</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <input type="text" id="gcal-api-key" placeholder="APIキー (AIza...)" autocomplete="off"
-            style="font-size:12px;font-family:'Space Mono',monospace"
-            oninput="saveGCalSettings()">
-          <input type="text" id="gcal-calendar-id" placeholder="カレンダーID (xxx@gmail.com)"
-            style="font-size:12px;font-family:'Space Mono',monospace"
-            oninput="saveGCalSettings()">
-          <div style="display:flex;gap:8px;align-items:center">
-            <button class="add-btn" onclick="fetchTodayEvents()">今日のイベントを取得</button>
-            <div id="gcal-status" style="font-size:12px;color:var(--text-dim)"></div>
-          </div>
-          <div id="gcal-today-events" style="font-size:12px;color:var(--text-dim)"></div>
-        </div>
-      </div>
-      <div class="settings-section">
-        <div class="settings-title">DJ / イベント登録</div>
-        <div class="form-row">
-          <input type="text" id="new-dj-name" placeholder="DJ名またはイベントタイトル" style="flex:3">
-          <button class="add-btn" onclick="addDJ()">追加</button>
-        </div>
-        <div class="item-list" id="dj-list" style="margin-top:8px"></div>
-      </div>
       <div class="settings-section">
         <div class="settings-title">バックアップ / 復元</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1981,6 +2007,7 @@
           <button class="aperiod-btn active" onclick="switchMgmtTab('analytics')">📊 分析</button>
           <button class="aperiod-btn" onclick="switchMgmtTab('accounting')">📒 経理</button>
           <button class="aperiod-btn" onclick="switchMgmtTab('staff')">👥 スタッフ</button>
+          <button class="aperiod-btn" onclick="switchMgmtTab('calendar')">📅 カレンダー</button>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           <button class="analytics-lock-btn" onclick="showChangePinPanel()">🔑 PIN変更</button>
@@ -2069,6 +2096,33 @@
             </div>
             <button class="add-btn" style="align-self:flex-start;margin-top:4px" onclick="saveGoalSettings()">保存</button>
           </div>
+        </div>
+      </div>
+
+      <div id="mgmt-tab-calendar" style="display:none;flex:1;overflow-y:auto;padding:20px;max-width:600px">
+        <div class="analytics-section-title" style="margin-bottom:12px">📅 Googleカレンダー連携</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.7">
+          Googleカレンダーのイベントを自動取得して、会計時のDJ/イベント名に自動入力します。<br>
+          APIキーとカレンダーIDを登録してください。
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">APIキー</div>
+            <input type="password" id="gcal-api-key-mgmt" placeholder="AIza..." autocomplete="off"
+              style="width:100%;box-sizing:border-box;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:'Space Mono',monospace"
+              oninput="saveGCalSettingsMgmt()">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">カレンダーID</div>
+            <input type="text" id="gcal-calendar-id-mgmt" placeholder="xxx@gmail.com"
+              style="width:100%;box-sizing:border-box;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:'Space Mono',monospace"
+              oninput="saveGCalSettingsMgmt()">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+            <button class="add-btn" onclick="fetchTodayEventsMgmt()">今日のイベントを取得</button>
+            <div id="gcal-status-mgmt" style="font-size:12px;color:var(--text-dim)"></div>
+          </div>
+          <div id="gcal-today-events-mgmt" style="font-size:12px;color:var(--text-dim);margin-top:4px"></div>
         </div>
       </div>
 
@@ -2567,16 +2621,18 @@ function updateHeaderDate() {
 
 // ===== VIEW SWITCHING =====
 function showView(v) {
-  document.getElementById('view-register').style.display = v==='register' ? 'flex' : 'none';
+  document.getElementById('view-register').style.display  = v==='register'  ? 'flex'  : 'none';
+  document.getElementById('view-timecard').style.display  = v==='timecard'  ? 'flex'  : 'none';
   document.getElementById('view-sales').classList.toggle('active', v==='sales');
   document.getElementById('view-settings').classList.toggle('active', v==='settings');
   document.getElementById('view-customers').classList.toggle('active', v==='customers');
   document.getElementById('view-analytics').classList.toggle('active', v==='analytics');
   document.querySelectorAll('.nav-tab').forEach((btn, i) => {
-    btn.classList.toggle('active', ['register','sales','settings','customers','analytics'][i] === v);
+    btn.classList.toggle('active', ['register','timecard','sales','settings','customers','analytics'][i] === v);
   });
-  if (v === 'sales') renderSales();
-  if (v === 'settings') renderSettings();
+  if (v === 'timecard')  { renderTcPunch(); switchTcTab('punch'); }
+  if (v === 'sales')     renderSales();
+  if (v === 'settings')  renderSettings();
   if (v === 'customers') renderCustomerList();
   if (v === 'analytics') openAnalytics();
 }
@@ -4146,6 +4202,285 @@ function selectChargeCustomer(name) {
 }
 
 
+function initGCalMgmtUI() {
+  const s = loadGCalSettings();
+  const keyEl = document.getElementById('gcal-api-key-mgmt');
+  const calEl = document.getElementById('gcal-calendar-id-mgmt');
+  if (keyEl && s.apiKey) keyEl.value = s.apiKey;
+  if (calEl && s.calId)  calEl.value = s.calId;
+  // Show today's cached events
+  const stored = (() => { try { return JSON.parse(localStorage.getItem('mhz_gcal_today')); } catch { return null; } })();
+  const evEl = document.getElementById('gcal-today-events-mgmt');
+  if (stored && evEl) {
+    evEl.innerHTML = stored.events.map(e => `<div style="padding:4px 0;border-bottom:1px solid var(--border)">${e}</div>`).join('');
+  }
+}
+
+function saveGCalSettingsMgmt() {
+  const apiKey = document.getElementById('gcal-api-key-mgmt')?.value.trim() || '';
+  const calId  = document.getElementById('gcal-calendar-id-mgmt')?.value.trim() || '';
+  localStorage.setItem(DB_GCAL, JSON.stringify({ apiKey, calId }));
+}
+
+async function fetchTodayEventsMgmt() {
+  // Sync mgmt fields to main settings then fetch
+  const apiKey = document.getElementById('gcal-api-key-mgmt')?.value.trim() || '';
+  const calId  = document.getElementById('gcal-calendar-id-mgmt')?.value.trim() || '';
+  localStorage.setItem(DB_GCAL, JSON.stringify({ apiKey, calId }));
+
+  const statusEl = document.getElementById('gcal-status-mgmt');
+  const eventsEl = document.getElementById('gcal-today-events-mgmt');
+  if (!apiKey || !calId) { statusEl.textContent = 'APIキーとカレンダーIDを入力してください'; return; }
+  statusEl.textContent = '取得中…';
+
+  const today = new Date();
+  const timeMin = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+  const timeMax = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events?key=${apiKey}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) { const e = await res.json(); statusEl.textContent = `エラー: ${e.error?.message}`; return; }
+    const data = await res.json();
+    const events = data.items || [];
+    const todayKey = toDateKey(new Date());
+    localStorage.setItem('mhz_gcal_today', JSON.stringify({ date: todayKey, events: events.map(e => e.summary) }));
+    statusEl.textContent = `${events.length}件取得 ✅`;
+    eventsEl.innerHTML = events.map(e => {
+      const start = e.start?.dateTime ? new Date(e.start.dateTime).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) : '終日';
+      return `<div style="padding:4px 0;border-bottom:1px solid var(--border)">${start} ${e.summary}</div>`;
+    }).join('');
+    showToast(`📅 ${events.map(e => e.summary).join('・')} を取得しました`);
+  } catch (err) {
+    statusEl.textContent = `通信エラー: ${err.message}`;
+  }
+}
+
+// ===== TIMECARD =====
+const DB_TIMECARD = 'mhz_timecard';
+const DB_SHIFT    = 'mhz_shift';
+
+function loadTimecard() {
+  try { return JSON.parse(localStorage.getItem(DB_TIMECARD)) || {}; } catch { return {}; }
+}
+function saveTimecard(data) { localStorage.setItem(DB_TIMECARD, JSON.stringify(data)); }
+function loadShift() {
+  try { return JSON.parse(localStorage.getItem(DB_SHIFT)) || {}; } catch { return {}; }
+}
+function saveShift(data) { localStorage.setItem(DB_SHIFT, JSON.stringify(data)); }
+
+function switchTcTab(tab) {
+  ['punch','history','shift'].forEach(t => {
+    document.getElementById(`tc-${t}-panel`).style.display = t === tab ? (t==='punch'?'block':'block') : 'none';
+    document.getElementById(`tc-tab-${t}`).classList.toggle('active', t === tab);
+  });
+  if (tab === 'history') renderTcHistory();
+  if (tab === 'shift')   renderShiftCalendar();
+}
+
+function renderTcPunch() {
+  const container = document.getElementById('tc-staff-buttons');
+  if (!container) return;
+  const timecard = loadTimecard();
+  const today = toDateKey(new Date());
+
+  container.innerHTML = staffList.map(st => {
+    const dayRec = timecard[st.id]?.[today];
+    const isIn   = dayRec && dayRec.in && !dayRec.out;
+    const isDone = dayRec && dayRec.in && dayRec.out;
+    const inTime  = dayRec?.in  ? new Date(dayRec.in).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : null;
+    const outTime = dayRec?.out ? new Date(dayRec.out).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : null;
+    const hours   = (dayRec?.in && dayRec?.out)
+      ? ((new Date(dayRec.out) - new Date(dayRec.in)) / 3600000).toFixed(1)
+      : null;
+
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${st.name[0]}</div>
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--text)">${st.name}</div>
+          <div style="font-size:11px;color:var(--text-dim)">時給 ¥${st.wage.toLocaleString()}</div>
+        </div>
+        ${isDone ? `<div style="margin-left:auto;font-size:12px;color:var(--green);font-weight:600">✅ 退勤済 ${hours}h</div>` : ''}
+        ${isIn ? `<div style="margin-left:auto;font-size:12px;color:var(--amber);font-weight:600">🟡 勤務中</div>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="punchIn(${st.id})" ${isIn || isDone ? 'disabled' : ''}
+          style="flex:1;padding:12px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;
+          background:${isIn || isDone ? '#e0e0e0' : '#e8f5e9'};color:${isIn || isDone ? '#aaa' : 'var(--green)'}">
+          出勤 ${inTime ? inTime : ''}
+        </button>
+        <button onclick="punchOut(${st.id})" ${!isIn ? 'disabled' : ''}
+          style="flex:1;padding:12px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;
+          background:${!isIn ? '#e0e0e0' : '#ffebee'};color:${!isIn ? '#aaa' : 'var(--red)'}">
+          退勤 ${outTime ? outTime : ''}
+        </button>
+      </div>
+    </div>`;
+  }).join('') || '<div style="color:var(--text-dim);font-size:13px">スタッフが登録されていません。管理→スタッフタブで追加してください。</div>';
+}
+
+function punchIn(staffId) {
+  const timecard = loadTimecard();
+  const today = toDateKey(new Date());
+  if (!timecard[staffId]) timecard[staffId] = {};
+  if (timecard[staffId][today]?.in) { showToast('すでに出勤済みです'); return; }
+  timecard[staffId][today] = { in: new Date().toISOString() };
+  saveTimecard(timecard);
+  const st = staffList.find(s => s.id === staffId);
+  showToast(`${st?.name} 出勤しました`);
+  renderTcPunch();
+}
+
+function punchOut(staffId) {
+  const timecard = loadTimecard();
+  const today = toDateKey(new Date());
+  if (!timecard[staffId]?.[today]?.in) { showToast('出勤打刻がありません'); return; }
+  if (timecard[staffId][today].out) { showToast('すでに退勤済みです'); return; }
+  timecard[staffId][today].out = new Date().toISOString();
+  saveTimecard(timecard);
+  const st = staffList.find(s => s.id === staffId);
+  const hours = ((new Date() - new Date(timecard[staffId][today].in)) / 3600000).toFixed(1);
+  showToast(`${st?.name} 退勤しました（${hours}h）`);
+  renderTcPunch();
+}
+
+function renderTcHistory() {
+  const sel   = document.getElementById('tc-history-staff');
+  const monEl = document.getElementById('tc-history-month');
+  const listEl= document.getElementById('tc-history-list');
+  const sumEl = document.getElementById('tc-history-summary');
+  if (!sel || !monEl) return;
+
+  const filterStaff = sel.value;
+  const filterMonth = monEl.value; // 'YYYY-MM'
+  const timecard = loadTimecard();
+
+  // Populate staff selector
+  const currentOptions = [...sel.options].map(o => o.value);
+  if (currentOptions.length <= 1) {
+    staffList.forEach(st => {
+      const opt = document.createElement('option');
+      opt.value = st.id; opt.textContent = st.name;
+      sel.appendChild(opt);
+    });
+  }
+
+  const rows = [];
+  for (const st of staffList) {
+    if (filterStaff && st.id != filterStaff) continue;
+    const stRec = timecard[st.id] || {};
+    for (const [date, rec] of Object.entries(stRec)) {
+      if (filterMonth && !date.startsWith(filterMonth)) continue;
+      if (!rec.in) continue;
+      const hours = rec.out ? ((new Date(rec.out) - new Date(rec.in)) / 3600000) : null;
+      const pay   = hours ? Math.round(hours * st.wage) : null;
+      rows.push({ date, st, rec, hours, pay });
+    }
+  }
+  rows.sort((a, b) => b.date > a.date ? 1 : -1);
+
+  listEl.innerHTML = rows.map(r => {
+    const inT  = new Date(r.rec.in).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+    const outT = r.rec.out ? new Date(r.rec.out).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : '—';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px">
+      <div style="width:80px;color:var(--text-dim);font-family:'Space Mono',monospace">${r.date.slice(5).replace('-','/')}</div>
+      <div style="flex:1;font-weight:600">${r.st.name}</div>
+      <div style="color:var(--text-dim)">${inT} → ${outT}</div>
+      <div style="font-family:'Space Mono',monospace;color:var(--amber)">${r.hours ? r.hours.toFixed(1)+'h' : '勤務中'}</div>
+      <div style="font-family:'Space Mono',monospace;color:var(--green)">${r.pay ? '¥'+r.pay.toLocaleString() : '—'}</div>
+      <button onclick="deleteTcRecord(${r.st.id},'${r.date}')" style="padding:2px 6px;border:1px solid #ffcccc;border-radius:4px;background:transparent;color:var(--red);font-size:11px;cursor:pointer">削除</button>
+    </div>`;
+  }).join('') || '<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px">記録がありません</div>';
+
+  // Summary
+  const totalHours = rows.filter(r => r.hours).reduce((s, r) => s + r.hours, 0);
+  const totalPay   = rows.filter(r => r.pay).reduce((s, r) => s + r.pay, 0);
+  sumEl.innerHTML = rows.length > 0
+    ? `合計: <b>${totalHours.toFixed(1)}時間</b> / 人件費合計: <b>¥${totalPay.toLocaleString()}</b>`
+    : '';
+}
+
+function deleteTcRecord(staffId, date) {
+  if (!confirm(`${date}の打刻記録を削除しますか？`)) return;
+  const timecard = loadTimecard();
+  if (timecard[staffId]) delete timecard[staffId][date];
+  saveTimecard(timecard);
+  renderTcHistory();
+  showToast('削除しました');
+}
+
+// ===== SHIFT CALENDAR =====
+function renderShiftCalendar() {
+  const staffSel = document.getElementById('shift-staff-select');
+  const monEl    = document.getElementById('shift-month-select');
+  const calEl    = document.getElementById('shift-calendar');
+  const listEl   = document.getElementById('shift-unavailable-list');
+  if (!staffSel || !monEl) return;
+
+  // Populate staff selector
+  if (staffSel.options.length === 0) {
+    staffList.forEach(st => {
+      const opt = document.createElement('option');
+      opt.value = st.id; opt.textContent = st.name;
+      staffSel.appendChild(opt);
+    });
+  }
+
+  const selStaffId = parseInt(staffSel.value) || staffList[0]?.id;
+  const monVal = monEl.value || toDateKey(new Date()).slice(0,7);
+  if (!monEl.value) monEl.value = monVal;
+
+  const [y, m] = monVal.split('-').map(Number);
+  const shift = loadShift();
+  const stKey = String(selStaffId);
+  const unavailable = shift[stKey] || [];
+
+  // Calendar grid
+  const days = ['日','月','火','水','木','金','土'];
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const firstDow = new Date(y, m-1, 1).getDay();
+
+  let html = days.map(d => `<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:4px 0">${d}</div>`).join('');
+  for (let i = 0; i < firstDow; i++) html += '<div></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateKey = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isUnavail = unavailable.includes(dateKey);
+    const dow = new Date(y, m-1, d).getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    html += `<div onclick="toggleUnavailable(${selStaffId},'${dateKey}')"
+      style="text-align:center;padding:8px 4px;border-radius:6px;cursor:pointer;font-size:13px;
+      background:${isUnavail ? '#ffebee' : 'var(--surface)'};
+      border:1px solid ${isUnavail ? '#ffcccc' : 'var(--border)'};
+      color:${isUnavail ? 'var(--red)' : isWeekend ? 'var(--amber)' : 'var(--text)'}">
+      ${d}
+    </div>`;
+  }
+  calEl.innerHTML = html;
+
+  // List of unavailable dates
+  listEl.innerHTML = unavailable.sort().map(date => {
+    const dt = new Date(date+'T00:00:00');
+    const dow = days[dt.getDay()];
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#ffebee;border:1px solid #ffcccc;border-radius:6px;font-size:12px">
+      <span style="color:var(--red)">${date.slice(5).replace('-','/')}(${dow})</span>
+      <button onclick="toggleUnavailable(${selStaffId},'${date}')"
+        style="margin-left:auto;padding:1px 8px;border:1px solid #ffcccc;border-radius:4px;background:transparent;color:var(--red);font-size:11px;cursor:pointer">取消</button>
+    </div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--text-dim)">出勤不可日なし</div>';
+}
+
+function toggleUnavailable(staffId, dateKey) {
+  const shift = loadShift();
+  const stKey = String(staffId);
+  if (!shift[stKey]) shift[stKey] = [];
+  const idx = shift[stKey].indexOf(dateKey);
+  if (idx >= 0) shift[stKey].splice(idx, 1);
+  else shift[stKey].push(dateKey);
+  saveShift(shift);
+  renderShiftCalendar();
+}
+
 // ===== GOOGLE CALENDAR INTEGRATION =====
 const DB_GCAL = 'mhz_gcal';
 
@@ -5190,10 +5525,12 @@ function switchMgmtTab(tab) {
   acctEl.style.display  = tab === 'accounting' ? 'flex' : 'none';
   acctEl.style.flexDirection = 'column';
   document.getElementById('mgmt-tab-staff').style.display       = tab === 'staff'      ? '' : 'none';
+  document.getElementById('mgmt-tab-calendar').style.display    = tab === 'calendar'   ? '' : 'none';
 
   if (tab === 'analytics') renderAnalytics();
   if (tab === 'accounting') renderAccounting();
   if (tab === 'staff') renderStaffMgmt();
+  if (tab === 'calendar') initGCalMgmtUI();
 }
 
 function selectAnalyticsPeriod(p) {
